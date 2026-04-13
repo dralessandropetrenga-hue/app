@@ -152,38 +152,6 @@
       text-align: right;
     }
 
-    /* ── Canale ───────────────────────────────────────── */
-    .channel-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
-
-    .channel-btn {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      padding: 16px 12px;
-      border: 0.5px solid rgba(0,0,0,0.12);
-      border-radius: 10px;
-      background: #fff;
-      cursor: pointer;
-      transition: all 0.15s;
-      font-family: inherit;
-    }
-
-    .channel-btn:hover { background: #f7f7f7; }
-
-    .channel-btn.active {
-      background: #e8f0fb;
-      border-color: #3b82f6;
-      color: #1d4ed8;
-    }
-
-    .channel-btn .icon { font-size: 22px; }
-    .channel-btn .label { font-size: 12px; font-weight: 500; }
-
     /* ── Input area ───────────────────────────────────── */
     #chat-input {
       width: 100%;
@@ -537,12 +505,166 @@
     @media (max-width: 600px) {
       .instructions-grid,
       .two-col { grid-template-columns: 1fr; }
-      .channel-grid { grid-template-columns: repeat(3, 1fr); }
       .score-card { flex-direction: column; align-items: flex-start; }
     }
 
     /* ── Divider ──────────────────────────────────────── */
     .section-gap { margin-bottom: 16px; }
+
+    /* ── Selettore persona ────────────────────────────── */
+    .person-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 4px;
+    }
+
+    .person-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 22px 16px;
+      border: 2px solid rgba(0,0,0,0.1);
+      border-radius: 14px;
+      background: #fff;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      transition: all 0.18s;
+    }
+
+    .person-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+
+    .person-btn .person-icon { font-size: 32px; }
+    .person-btn .person-sub  { font-size: 11px; font-weight: 400; opacity: 0.65; margin-top: 1px; }
+
+    .person-btn.miriana { color: #2e7d32; border-color: #c8e6c9; }
+    .person-btn.miriana:hover { border-color: #2e7d32; }
+    .person-btn.miriana.active { background: #2e7d32; color: #fff; border-color: #2e7d32; box-shadow: 0 4px 14px rgba(46,125,50,0.35); }
+
+    .person-btn.carmen { color: #1565c0; border-color: #bbdefb; }
+    .person-btn.carmen:hover { border-color: #1565c0; }
+    .person-btn.carmen.active { background: #1565c0; color: #fff; border-color: #1565c0; box-shadow: 0 4px 14px rgba(21,101,192,0.35); }
+
+    .person-hint {
+      font-size: 12px;
+      color: #aaa;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    /* ── Storico revisioni ────────────────────────────── */
+    .history-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+      padding: 14px 20px;
+      background: #fff;
+      border: 0.5px solid rgba(0,0,0,0.1);
+      border-radius: 12px;
+      margin-bottom: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      transition: background 0.15s;
+    }
+
+    .history-toggle:hover { background: #fafafa; }
+    .history-toggle .arrow { font-size: 10px; color: #999; transition: transform 0.2s; }
+    .history-toggle.open .arrow { transform: rotate(90deg); }
+
+    .history-count-badge {
+      margin-left: auto;
+      background: #f0f0f0;
+      border-radius: 20px;
+      padding: 2px 9px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #666;
+    }
+
+    .history-panel {
+      display: none;
+      background: #fff;
+      border: 0.5px solid rgba(0,0,0,0.1);
+      border-top: none;
+      border-radius: 0 0 12px 12px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .history-panel.open { display: block; }
+
+    .history-empty {
+      padding: 28px 20px;
+      text-align: center;
+      color: #aaa;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 20px;
+      border-bottom: 0.5px solid rgba(0,0,0,0.06);
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+
+    .history-item:last-child { border-bottom: none; }
+    .history-item:hover { background: #f5f8ff; }
+
+    .history-score {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .history-info { flex: 1; min-width: 0; }
+
+    .history-patient { font-weight: 600; font-size: 13px; color: #1a1a1a; }
+    .history-meta    { font-size: 11px; color: #888; margin-top: 2px; }
+    .history-preview {
+      font-size: 12px;
+      color: #666;
+      margin-top: 3px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .history-del {
+      padding: 5px 9px;
+      font-size: 13px;
+      background: none;
+      border: none;
+      color: #ccc;
+      cursor: pointer;
+      border-radius: 6px;
+      flex-shrink: 0;
+      transition: color 0.12s, background 0.12s;
+      line-height: 1;
+    }
+
+    .history-del:hover { color: #dc2626; background: #fef2f2; }
+
+    @media (max-width: 600px) {
+      .person-grid { grid-template-columns: 1fr 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -556,6 +678,34 @@
     </div>
     <div class="brand">Dr. Petrenga · You Are Art</div>
   </header>
+
+  <!-- ── Selettore segretaria ─────────────────────────── -->
+  <div class="card section-gap">
+    <div class="card-title">Chi sta usando l'app?</div>
+    <div class="person-grid">
+      <button class="person-btn miriana" id="btn-miriana">
+        <span class="person-icon">👩</span>
+        <span>Miriana</span>
+        <span class="person-sub">Instagram &amp; Social</span>
+      </button>
+      <button class="person-btn carmen" id="btn-carmen">
+        <span class="person-icon">👩</span>
+        <span>Carmen</span>
+        <span class="person-sub">WhatsApp &amp; Telefonate</span>
+      </button>
+    </div>
+    <div class="person-hint" id="person-hint">Seleziona il tuo nome per vedere solo le tue revisioni</div>
+  </div>
+
+  <!-- ── Storico revisioni ──────────────────────────────── -->
+  <div class="history-toggle" id="history-toggle">
+    <span class="arrow">▸</span>
+    <span>📋 Storico revisioni</span>
+    <span class="history-count-badge" id="history-count"></span>
+  </div>
+  <div class="history-panel" id="history-panel">
+    <div id="history-list"></div>
+  </div>
 
   <!-- ── Istruzioni personalizzate ────────────────────── -->
   <div class="instructions-toggle" id="instr-toggle">
@@ -574,25 +724,6 @@
       </div>
     </div>
     <div class="instr-save-hint">Le istruzioni vengono salvate automaticamente</div>
-  </div>
-
-  <!-- ── Selezione canale ──────────────────────────────── -->
-  <div class="card section-gap">
-    <div class="card-title">Canale di comunicazione</div>
-    <div class="channel-grid">
-      <button class="channel-btn active" data-channel="instagram">
-        <span class="icon">📸</span>
-        <span class="label">Instagram</span>
-      </button>
-      <button class="channel-btn" data-channel="whatsapp">
-        <span class="icon">💬</span>
-        <span class="label">WhatsApp</span>
-      </button>
-      <button class="channel-btn" data-channel="telefonata">
-        <span class="icon">📞</span>
-        <span class="label">Telefonata</span>
-      </button>
-    </div>
   </div>
 
   <!-- ── GoHighLevel ───────────────────────────────────── -->
@@ -638,7 +769,7 @@
    STATO APPLICAZIONE
 ═══════════════════════════════════════════════════════ */
 const state = {
-  channel: 'instagram',   // instagram | whatsapp | telefonata
+  selectedPerson: null,   // 'miriana' | 'carmen' | null
   images: [],             // [{ name, base64, mediaType }]
 };
 
@@ -712,6 +843,13 @@ const instrToggle   = document.getElementById('instr-toggle');
 const instrPanel    = document.getElementById('instr-panel');
 const instrMiriana  = document.getElementById('instr-miriana');
 const instrCarmen   = document.getElementById('instr-carmen');
+const btnMiriana    = document.getElementById('btn-miriana');
+const btnCarmen     = document.getElementById('btn-carmen');
+const personHint    = document.getElementById('person-hint');
+const historyToggle = document.getElementById('history-toggle');
+const historyPanel  = document.getElementById('history-panel');
+const historyCount  = document.getElementById('history-count');
+const historyList   = document.getElementById('history-list');
 const btnGhlSearch  = document.getElementById('btn-ghl-search');
 const ghlSearchInput= document.getElementById('ghl-search');
 const ghlResults    = document.getElementById('ghl-results');
@@ -743,14 +881,117 @@ instrToggle.addEventListener('click', () => {
 });
 
 /* ═══════════════════════════════════════════════════════
-   CANALE — selezione
+   SELETTORE SEGRETARIA
 ═══════════════════════════════════════════════════════ */
-document.querySelectorAll('.channel-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.channel-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    state.channel = btn.dataset.channel;
+function selectPerson(person) {
+  state.selectedPerson = person;
+  btnMiriana.classList.toggle('active', person === 'miriana');
+  btnCarmen.classList.toggle('active', person === 'carmen');
+  personHint.textContent = person === 'miriana'
+    ? 'Ciao Miriana! Vedi solo le tue revisioni.'
+    : 'Ciao Carmen! Vedi solo le tue revisioni.';
+  updateAnalyzeBtn();
+  renderHistory();
+}
+
+btnMiriana.addEventListener('click', () => selectPerson('miriana'));
+btnCarmen.addEventListener('click', () => selectPerson('carmen'));
+
+/* ═══════════════════════════════════════════════════════
+   STORICO REVISIONI
+═══════════════════════════════════════════════════════ */
+function getHistory() {
+  try { return JSON.parse(localStorage.getItem('revisioni_history') || '[]'); }
+  catch { return []; }
+}
+
+function saveHistory(arr) {
+  localStorage.setItem('revisioni_history', JSON.stringify(arr));
+}
+
+function saveToHistory(result) {
+  const v = result.voti || {};
+  const avgScore = Math.round(
+    ((v.posizionamento_high_ticket || 0) + (v.struttura_vendita || 0) + (v.chiarezza_efficienza || 0)) / 3
+  );
+  const entry = {
+    id: Date.now(),
+    person: state.selectedPerson,
+    date: new Date().toISOString(),
+    patientName: ghlState.selectedContact ? ghlState.selectedContact.name : null,
+    avgScore,
+    sintesi: result.sintesi || '',
+    tipo: result.tipo || '',
+    segretaria: result.segretaria || '',
+    result,
+  };
+  const history = getHistory();
+  history.unshift(entry);
+  if (history.length > 200) history.splice(200);
+  saveHistory(history);
+  renderHistory();
+}
+
+function deleteFromHistory(id) {
+  const history = getHistory().filter(e => e.id !== id);
+  saveHistory(history);
+  renderHistory();
+}
+
+function renderHistory() {
+  const history = getHistory();
+  const filtered = state.selectedPerson
+    ? history.filter(e => e.person === state.selectedPerson)
+    : history;
+
+  historyCount.textContent = filtered.length ? String(filtered.length) : '';
+
+  if (!filtered.length) {
+    const who = state.selectedPerson === 'miriana' ? 'Miriana' : state.selectedPerson === 'carmen' ? 'Carmen' : null;
+    historyList.innerHTML = `<div class="history-empty">${who ? `Nessuna revisione trovata per ${who}.` : 'Seleziona una segretaria per vedere le revisioni.'}<br><span style="font-size:12px">Le analisi vengono salvate automaticamente dopo ogni revisione.</span></div>`;
+    return;
+  }
+
+  historyList.innerHTML = filtered.map(entry => {
+    const cls = scoreClass(entry.avgScore);
+    const d = new Date(entry.date);
+    const dateStr = d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    const timeStr = d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+    const patient = entry.patientName || 'Paziente non specificato';
+    const tipoLabel = (entry.tipo || '').toLowerCase().includes('telef') ? '📞' : '💬';
+    const preview = (entry.sintesi || '').slice(0, 90);
+    return `<div class="history-item" data-id="${entry.id}">
+      <div class="history-score ${cls}">${entry.avgScore}</div>
+      <div class="history-info">
+        <div class="history-patient">${escHtml(patient)}</div>
+        <div class="history-meta">${tipoLabel} ${dateStr} alle ${timeStr}</div>
+        <div class="history-preview">${escHtml(preview)}</div>
+      </div>
+      <button class="history-del" title="Elimina" data-del="${entry.id}">✕</button>
+    </div>`;
+  }).join('');
+
+  historyList.querySelectorAll('.history-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = parseInt(el.dataset.id);
+      const found = getHistory().find(e => e.id === id);
+      if (!found) return;
+      renderResults(found.result);
+      resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   });
+
+  historyList.querySelectorAll('[data-del]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      deleteFromHistory(parseInt(btn.dataset.del));
+    });
+  });
+}
+
+historyToggle.addEventListener('click', () => {
+  historyToggle.classList.toggle('open');
+  historyPanel.classList.toggle('open');
 });
 
 /* ═══════════════════════════════════════════════════════
@@ -759,7 +1000,8 @@ document.querySelectorAll('.channel-btn').forEach(btn => {
 function updateAnalyzeBtn() {
   const hasText   = chatInput.value.trim().length > 0;
   const hasImages = state.images.length > 0;
-  btnAnalyze.disabled = !(hasText || hasImages);
+  const hasPerson = state.selectedPerson !== null;
+  btnAnalyze.disabled = !(hasPerson && (hasText || hasImages));
 }
 
 chatInput.addEventListener('input', updateAnalyzeBtn);
@@ -973,6 +1215,7 @@ async function ghlSearch() {
 
 // Carica le conversazioni di un contatto
 async function ghlLoadConversations(contactId, contactName) {
+  ghlState.selectedContact = { id: contactId, name: contactName };
   ghlConvList.innerHTML = '<div style="padding:10px;font-size:13px;color:#888">Caricamento conversazioni...</div>';
   ghlConvList.classList.add('visible');
 
@@ -1045,6 +1288,7 @@ async function ghlLoadMessages(conversationId, contactName) {
 btnClear.addEventListener('click', () => {
   chatInput.value = '';
   state.images = [];
+  ghlState.selectedContact = null;
   renderThumbs();
   updateAnalyzeBtn();
   clearError();
@@ -1072,13 +1316,13 @@ function scoreClass(n) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   CANALE LABEL
+   TIPO LABEL
 ═══════════════════════════════════════════════════════ */
-const CHANNEL_LABELS = {
-  instagram: '📸 Instagram',
-  whatsapp:  '💬 WhatsApp',
-  telefonata:'📞 Telefonata',
-};
+function tipoLabel(tipo) {
+  const t = (tipo || '').toLowerCase();
+  if (t.includes('telef') || t.includes('call')) return '📞 Telefonata';
+  return '💬 Chat';
+}
 
 /* ═══════════════════════════════════════════════════════
    RENDER RISULTATI — struttura nuovo prompt high ticket
@@ -1098,7 +1342,7 @@ function renderResults(r) {
         <div class="score-badges">
           <span class="badge tipo">${escHtml(r.tipo || '—')}</span>
           <span class="badge segr">${escHtml(r.segretaria || '—')}</span>
-          <span class="badge canale">${CHANNEL_LABELS[state.channel] || state.channel}</span>
+          <span class="badge canale">${tipoLabel(r.tipo)}</span>
         </div>
         <div style="display:flex;gap:12px;margin:8px 0">
           ${renderMiniBadge('High Ticket', v.posizionamento_high_ticket)}
@@ -1235,19 +1479,15 @@ btnAnalyze.addEventListener('click', async () => {
   /* Costruisci content blocks */
   const contentBlocks = [];
 
-  /* Testo canale per il contesto */
-  const canaleTesto = {
-    instagram:  'Canale: Instagram (gestito da Miriana)',
-    whatsapp:   'Canale: WhatsApp (gestito da Carmen)',
-    telefonata: 'Canale: Telefonata (gestito da Carmen)',
-  }[state.channel];
+  /* Contesto segretaria */
+  const personaTesto = state.selectedPerson === 'miriana'
+    ? 'Segretaria: Miriana (gestisce Instagram e social media)'
+    : 'Segretaria: Carmen (gestisce WhatsApp e telefonate)';
 
-  if (testo) {
-    contentBlocks.push({
-      type: 'text',
-      text: `${canaleTesto}\n\n${testo}`,
-    });
-  }
+  contentBlocks.push({
+    type: 'text',
+    text: testo ? `${personaTesto}\n\n${testo}` : personaTesto,
+  });
 
   /* Immagini in base64 */
   state.images.forEach(img => {
@@ -1305,6 +1545,7 @@ btnAnalyze.addEventListener('click', async () => {
     }
 
     renderResults(result);
+    saveToHistory(result);
 
     /* Scroll ai risultati */
     resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1322,6 +1563,7 @@ btnAnalyze.addEventListener('click', async () => {
    INIT
 ═══════════════════════════════════════════════════════ */
 updateAnalyzeBtn();
+renderHistory();
 </script>
 </body>
 </html>
