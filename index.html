@@ -881,7 +881,10 @@ fileAudio.addEventListener('change', async () => {
     const data = await res.json();
 
     if (!res.ok) {
-      throw new Error(data.error || `Errore ${res.status}`);
+      const errMsg = data.error
+        ? (typeof data.error === 'object' ? (data.error.message || JSON.stringify(data.error)) : data.error)
+        : `Errore ${res.status}`;
+      throw new Error(errMsg);
     }
 
     const testo = data.text || '';
@@ -1252,7 +1255,7 @@ btnAnalyze.addEventListener('click', async () => {
 
   try {
     const payload = {
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 2048,
       system: buildSystemPrompt(),
       messages: [{ role: 'user', content: contentBlocks }],
@@ -1267,7 +1270,10 @@ btnAnalyze.addEventListener('click', async () => {
     const data = await res.json();
 
     if (!res.ok) {
-      throw new Error(data.error || `Errore ${res.status}`);
+      const errMsg = data.error
+        ? (typeof data.error === 'object' ? (data.error.message || JSON.stringify(data.error)) : data.error)
+        : `Errore ${res.status}`;
+      throw new Error(errMsg);
     }
 
     /* Estrai il testo dalla risposta Anthropic */
