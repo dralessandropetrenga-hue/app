@@ -486,6 +486,53 @@
       display: block;
     }
 
+    .ghl-results {
+      margin-top: 10px;
+      border: 0.5px solid rgba(0,0,0,0.1);
+      border-radius: 8px;
+      overflow: hidden;
+      display: none;
+    }
+
+    .ghl-results.visible { display: block; }
+
+    .ghl-contact-item {
+      padding: 10px 14px;
+      cursor: pointer;
+      border-bottom: 0.5px solid rgba(0,0,0,0.06);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background 0.12s;
+    }
+
+    .ghl-contact-item:last-child { border-bottom: none; }
+    .ghl-contact-item:hover { background: #f0f4ff; }
+
+    .ghl-contact-name { font-weight: 600; font-size: 13px; color: #1a1a1a; }
+    .ghl-contact-phone { font-size: 12px; color: #888; margin-left: auto; }
+
+    .ghl-conv-list {
+      margin-top: 10px;
+      display: none;
+    }
+    .ghl-conv-list.visible { display: block; }
+
+    .ghl-conv-item {
+      padding: 9px 14px;
+      border: 0.5px solid rgba(0,0,0,0.1);
+      border-radius: 8px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.12s;
+    }
+    .ghl-conv-item:hover { background: #f0f4ff; }
+    .ghl-conv-type { font-weight: 600; color: #3b82f6; }
+
     /* ── Responsive ───────────────────────────────────── */
     @media (max-width: 600px) {
       .instructions-grid,
@@ -550,12 +597,16 @@
 
   <!-- ── GoHighLevel ───────────────────────────────────── -->
   <div class="card section-gap">
-    <div class="card-title">Carica da GoHighLevel (opzionale)</div>
-    <span class="ghl-label">ID conversazione o contatto GHL</span>
+    <div class="card-title">Carica da GoHighLevel</div>
+    <span class="ghl-label">Cerca paziente per nome</span>
     <div class="ghl-row">
-      <input type="text" id="ghl-id" placeholder="Es: abc123xyz — incolla l'ID della conversazione GHL" />
-      <button class="btn btn-secondary" id="btn-ghl">📥 Carica chat GHL</button>
+      <input type="text" id="ghl-search" placeholder="Es: Mario Rossi" autocomplete="off" />
+      <button class="btn btn-secondary" id="btn-ghl-search">🔍 Cerca</button>
     </div>
+    <!-- Lista contatti trovati -->
+    <div class="ghl-results" id="ghl-results"></div>
+    <!-- Lista conversazioni del contatto selezionato -->
+    <div class="ghl-conv-list" id="ghl-conv-list"></div>
   </div>
 
   <!-- ── Area input ────────────────────────────────────── -->
@@ -594,31 +645,52 @@ const state = {
 /* ═══════════════════════════════════════════════════════
    SYSTEM PROMPT BASE
 ═══════════════════════════════════════════════════════ */
-const BASE_SYSTEM_PROMPT = `Sei un coach di comunicazione per lo studio medico estetico del Dr. Alessandro Petrenga (Roma e Milano). Claim dello studio: "You Are Art". Specializzazioni: Medicina Estetica, Chirurgia Estetica, Senologia.
+const BASE_SYSTEM_PROMPT = `Sei un coach di comunicazione per la segreteria del Dr. Petrenga, medico di medicina estetica high ticket (FaceLine, filler, botox, rinofiller).
+Il tuo compito è analizzare e migliorare chat WhatsApp, DM Instagram e trascrizioni telefonate gestite da Carmen e Miriana.
 
 Le segretarie sono:
 - Miriana: gestisce social media e chat Instagram
 - Carmen: gestisce chat WhatsApp, telefonate, accoglienza, prenotazioni
 
-Il tono ideale dello studio è: PROFESSIONALE MA CALDO. Mai freddo o burocratico, mai troppo informale.
+OBIETTIVO: ottimizza in questo ordine:
+1. Portare la paziente a prenotare con caparra da 50€.
+2. Seguire gli step giusti, NON saltare subito al "vuoi prenotare?":
+   - Capire obiettivo estetico / risultato desiderato.
+   - Far emergere i pain point (cosa la infastidisce, da quanto tempo, quanto è prioritario).
+   - Qualificare (trattamento adatto / sede / disponibilità / capacità di spesa high ticket).
+   - Guidare con domande verso la prenotazione (data, sede, caparra).
+3. Mantenere posizionamento premium: professionale, amichevole, efficiente, NON servile.
 
-Analizza la conversazione/telefonata fornita e restituisci SOLO un JSON puro senza backtick con questa struttura:
+TONO: sempre in italiano con "tu". Professionale ma amichevole, sicuro, sintetico. Assumed close: proporre opzioni concrete. Sequenza: Riconosci → Normalizza → Prossima domanda.
+
+COSE DA NON FARE (segnala se compaiono):
+- "sono a tua disposizione", "per qualsiasi cosa scrivimi", "scrivimi quando vuoi".
+- Tono servile o bisognoso.
+- Diminutivi ("tesoro, cara, amore"), troppi emoji.
+- Promesse di risultato garantito o consigli medici specifici.
+- Linguaggio che faccia sentire la paziente sbagliata.
+
+Analizza e restituisci SOLO un JSON puro senza backtick con questa struttura:
 {
   "tipo": "chat" o "telefonata",
   "segretaria": "Miriana" o "Carmen" o "Non identificata",
-  "valutazione_generale": numero da 1 a 10,
-  "sintesi": "2-3 frasi sull'andamento generale",
-  "punti_forza": ["punto 1", "punto 2"],
-  "aree_miglioramento": ["area 1", "area 2"],
-  "feedback": [
-    { "categoria": "Tono e stile", "voto": numero 1-10, "commento": "...", "suggerimento": "..." },
-    { "categoria": "Prenotazioni/Info", "voto": numero 1-10, "commento": "...", "suggerimento": "..." },
-    { "categoria": "Gestione obiezioni", "voto": numero 1-10, "commento": "...", "suggerimento": "..." },
-    { "categoria": "Conversione lead", "voto": numero 1-10, "commento": "...", "suggerimento": "..." }
+  "sintesi": "max 5 righe sull'andamento generale",
+  "voti": {
+    "posizionamento_high_ticket": numero 1-10,
+    "struttura_vendita": numero 1-10,
+    "chiarezza_efficienza": numero 1-10
+  },
+  "errori_critici": ["errore grave 1", "errore grave 2"],
+  "frasi_da_evitare": [
+    { "originale": "frase esatta trovata nel testo", "corretta": "versione migliorata high ticket" }
   ],
-  "risposta_suggerita": "risposta ideale da inviare oppure stringa vuota",
-  "frase_da_evitare": "frase usata da evitare oppure stringa vuota",
-  "frase_consigliata": "alternativa migliore oppure stringa vuota"
+  "riscrittura": {
+    "primo_messaggio": "come riscrivere il primo messaggio di risposta",
+    "domande_obiettivo_pain": "come fare 1-2 domande su obiettivo e pain",
+    "proposta_prenotazione": "come proporre la prenotazione in modo naturale",
+    "chiusura_caparra": "come chiedere conferma e spiegare la caparra"
+  },
+  "checklist": ["step 1", "step 2", "step 3", "step 4", "step 5"]
 }`;
 
 /* ═══════════════════════════════════════════════════════
@@ -640,8 +712,10 @@ const instrToggle   = document.getElementById('instr-toggle');
 const instrPanel    = document.getElementById('instr-panel');
 const instrMiriana  = document.getElementById('instr-miriana');
 const instrCarmen   = document.getElementById('instr-carmen');
-const btnGhl        = document.getElementById('btn-ghl');
-const ghlIdInput    = document.getElementById('ghl-id');
+const btnGhlSearch  = document.getElementById('btn-ghl-search');
+const ghlSearchInput= document.getElementById('ghl-search');
+const ghlResults    = document.getElementById('ghl-results');
+const ghlConvList   = document.getElementById('ghl-conv-list');
 
 /* ═══════════════════════════════════════════════════════
    LOCALSTORAGE — istruzioni
@@ -823,42 +897,129 @@ fileAudio.addEventListener('change', async () => {
 });
 
 /* ═══════════════════════════════════════════════════════
-   GOHIGHLEVEL — carica conversazione
+   GOHIGHLEVEL — ricerca per nome paziente
 ═══════════════════════════════════════════════════════ */
-btnGhl.addEventListener('click', async () => {
-  const id = ghlIdInput.value.trim();
-  if (!id) {
-    showError('Inserisci un ID conversazione GoHighLevel.');
-    return;
-  }
 
-  const origLabel = btnGhl.textContent;
-  btnGhl.textContent = 'Caricamento...';
-  btnGhl.disabled = true;
+// Stato GHL locale
+const ghlState = { selectedContact: null };
+
+// Cerca contatti per nome
+btnGhlSearch.addEventListener('click', ghlSearch);
+ghlSearchInput.addEventListener('keydown', e => { if (e.key === 'Enter') ghlSearch(); });
+
+async function ghlSearch() {
+  const query = ghlSearchInput.value.trim();
+  if (!query) { showError('Inserisci il nome del paziente.'); return; }
+
+  const orig = btnGhlSearch.textContent;
+  btnGhlSearch.textContent = 'Ricerca...';
+  btnGhlSearch.disabled = true;
+  ghlResults.classList.remove('visible');
+  ghlConvList.classList.remove('visible');
+  ghlResults.innerHTML = '';
+  ghlConvList.innerHTML = '';
   clearError();
 
   try {
-    const res = await fetch('/api/ghl', {
+    const res  = await fetch('/api/ghl', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ conversationId: id }),
+      body: JSON.stringify({ action: 'searchContacts', query }),
     });
-
     const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `Errore ${res.status}`);
 
-    if (!res.ok) {
-      throw new Error(data.error || `Errore ${res.status}`);
+    const contacts = data.contacts || [];
+    if (!contacts.length) {
+      ghlResults.innerHTML = '<div class="ghl-contact-item" style="cursor:default;color:#888">Nessun paziente trovato</div>';
+      ghlResults.classList.add('visible');
+      return;
     }
 
-    chatInput.value = data.text || '';
-    updateAnalyzeBtn();
+    ghlResults.innerHTML = contacts.map(c => `
+      <div class="ghl-contact-item" data-id="${c.id}" data-name="${escHtml(c.name)}">
+        <span class="ghl-contact-name">${escHtml(c.name)}</span>
+        <span class="ghl-contact-phone">${escHtml(c.phone)}</span>
+      </div>`).join('');
+    ghlResults.classList.add('visible');
+
+    // Click su contatto → carica conversazioni
+    ghlResults.querySelectorAll('.ghl-contact-item[data-id]').forEach(el => {
+      el.addEventListener('click', () => ghlLoadConversations(el.dataset.id, el.dataset.name));
+    });
+
   } catch (err) {
     showError('Errore GoHighLevel: ' + err.message);
   } finally {
-    btnGhl.textContent = origLabel;
-    btnGhl.disabled = false;
+    btnGhlSearch.textContent = orig;
+    btnGhlSearch.disabled = false;
   }
-});
+}
+
+// Carica le conversazioni di un contatto
+async function ghlLoadConversations(contactId, contactName) {
+  ghlConvList.innerHTML = '<div style="padding:10px;font-size:13px;color:#888">Caricamento conversazioni...</div>';
+  ghlConvList.classList.add('visible');
+
+  try {
+    const res  = await fetch('/api/ghl', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'getConversation', contactId }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `Errore ${res.status}`);
+
+    const convs = data.conversations || [];
+    if (!convs.length) {
+      ghlConvList.innerHTML = '<div style="padding:10px;font-size:13px;color:#888">Nessuna conversazione trovata per questo contatto.</div>';
+      return;
+    }
+
+    ghlConvList.innerHTML = `<div style="font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:#888;margin-bottom:8px">Conversazioni di ${escHtml(contactName)}</div>` +
+      convs.map(cv => {
+        const tipo = cv.type || cv.channel || 'Chat';
+        const data_str = cv.dateUpdated ? new Date(cv.dateUpdated).toLocaleDateString('it-IT') : '';
+        return `<div class="ghl-conv-item" data-conv-id="${cv.id}" data-name="${escHtml(contactName)}">
+          <span class="ghl-conv-type">${escHtml(tipo)}</span>
+          <span>${escHtml(cv.lastMessageBody || 'Apri conversazione')}</span>
+          <span style="margin-left:auto;font-size:11px;color:#aaa">${data_str}</span>
+        </div>`;
+      }).join('');
+
+    // Click su conversazione → carica messaggi
+    ghlConvList.querySelectorAll('.ghl-conv-item').forEach(el => {
+      el.addEventListener('click', () => ghlLoadMessages(el.dataset.convId, el.dataset.name));
+    });
+
+  } catch (err) {
+    ghlConvList.innerHTML = `<div style="padding:10px;font-size:13px;color:#dc2626">Errore: ${escHtml(err.message)}</div>`;
+  }
+}
+
+// Carica i messaggi e li mette nella textarea
+async function ghlLoadMessages(conversationId, contactName) {
+  ghlConvList.innerHTML = '<div style="padding:10px;font-size:13px;color:#888">Caricamento messaggi...</div>';
+
+  try {
+    const res  = await fetch('/api/ghl', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'getMessages', conversationId, contactName }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `Errore ${res.status}`);
+
+    chatInput.value = data.text || '';
+    updateAnalyzeBtn();
+    ghlConvList.classList.remove('visible');
+    ghlResults.classList.remove('visible');
+    ghlSearchInput.value = '';
+    clearError();
+  } catch (err) {
+    ghlConvList.innerHTML = `<div style="padding:10px;font-size:13px;color:#dc2626">Errore: ${escHtml(err.message)}</div>`;
+  }
+}
 
 /* ═══════════════════════════════════════════════════════
    CANCELLA TUTTO
@@ -870,7 +1031,11 @@ btnClear.addEventListener('click', () => {
   updateAnalyzeBtn();
   clearError();
   resultsDiv.innerHTML = '';
-  ghlIdInput.value = '';
+  ghlSearchInput.value = '';
+  ghlResults.classList.remove('visible');
+  ghlConvList.classList.remove('visible');
+  ghlResults.innerHTML = '';
+  ghlConvList.innerHTML = '';
 });
 
 /* ═══════════════════════════════════════════════════════
@@ -898,95 +1063,117 @@ const CHANNEL_LABELS = {
 };
 
 /* ═══════════════════════════════════════════════════════
-   RENDER RISULTATI
+   RENDER RISULTATI — struttura nuovo prompt high ticket
 ═══════════════════════════════════════════════════════ */
 function renderResults(r) {
   let html = '';
 
-  /* 1. Voto generale */
-  const cls = scoreClass(r.valutazione_generale);
+  /* 1. Card intestazione con 3 voti e sintesi */
+  const v = r.voti || {};
+  const avgVoto = Math.round(((v.posizionamento_high_ticket||0) + (v.struttura_vendita||0) + (v.chiarezza_efficienza||0)) / 3);
+  const cls = scoreClass(avgVoto);
   html += `
   <div class="card section-gap">
     <div class="score-card">
-      <div class="score-circle ${cls}">${r.valutazione_generale}</div>
+      <div class="score-circle ${cls}">${avgVoto}</div>
       <div class="score-meta">
         <div class="score-badges">
-          <span class="badge tipo">${r.tipo || '—'}</span>
-          <span class="badge segr">${r.segretaria || '—'}</span>
+          <span class="badge tipo">${escHtml(r.tipo || '—')}</span>
+          <span class="badge segr">${escHtml(r.segretaria || '—')}</span>
           <span class="badge canale">${CHANNEL_LABELS[state.channel] || state.channel}</span>
+        </div>
+        <div style="display:flex;gap:12px;margin:8px 0">
+          ${renderMiniBadge('High Ticket', v.posizionamento_high_ticket)}
+          ${renderMiniBadge('Struttura vendita', v.struttura_vendita)}
+          ${renderMiniBadge('Chiarezza', v.chiarezza_efficienza)}
         </div>
         <div class="score-sintesi">${escHtml(r.sintesi || '')}</div>
       </div>
     </div>
   </div>`;
 
-  /* 2. Punti forza / aree miglioramento */
-  const forza = (r.punti_forza || []).map(p => `<li>${escHtml(p)}</li>`).join('');
-  const miglio = (r.aree_miglioramento || []).map(p => `<li>${escHtml(p)}</li>`).join('');
-  html += `
-  <div class="two-col">
-    <div class="col-box green">
-      <h4>Punti di forza</h4>
-      <ul>${forza}</ul>
-    </div>
-    <div class="col-box red">
-      <h4>Da migliorare</h4>
-      <ul>${miglio}</ul>
-    </div>
-  </div>`;
-
-  /* 3. Feedback per area */
-  (r.feedback || []).forEach(fb => {
-    const c = scoreColor(fb.voto);
-    html += `
-    <div class="feedback-card">
-      <div class="feedback-header">
-        <div class="mini-circle" style="background:${c}">${fb.voto}</div>
-        <div class="feedback-cat">${escHtml(fb.categoria)}</div>
-      </div>
-      <div class="feedback-comment">${escHtml(fb.commento || '')}</div>
-      <div class="feedback-tip">${escHtml(fb.suggerimento || '')}</div>
-    </div>`;
-  });
-
-  /* 4. Risposta suggerita */
-  if (r.risposta_suggerita) {
+  /* 2. Errori critici */
+  const errori = r.errori_critici || [];
+  if (errori.length) {
     html += `
     <div class="card section-gap">
-      <div class="card-title">Risposta suggerita</div>
-      <div class="reply-box" id="reply-text">${escHtml(r.risposta_suggerita)}</div>
-      <button class="copy-btn" id="btn-copy">📋 Copia</button>
+      <div class="card-title" style="color:#dc2626">⚠ Errori critici</div>
+      <ul style="margin:0;padding-left:20px;line-height:1.8">
+        ${errori.map(e => `<li>${escHtml(e)}</li>`).join('')}
+      </ul>
     </div>`;
   }
 
-  /* 5. Frase da evitare / alternativa */
-  if (r.frase_da_evitare) {
+  /* 3. Frasi da evitare */
+  const frasi = r.frasi_da_evitare || [];
+  if (frasi.length) {
+    html += '<div class="card section-gap"><div class="card-title">Frasi da correggere</div>';
+    frasi.forEach((f, i) => {
+      html += `
+      <div class="two-col" style="${i > 0 ? 'margin-top:10px' : ''}">
+        <div class="col-box amber">
+          <h4>Da evitare</h4>
+          <p class="frase">"${escHtml(f.originale || '')}"</p>
+        </div>
+        <div class="col-box teal">
+          <h4>Versione migliore</h4>
+          <p class="frase">"${escHtml(f.corretta || '')}"</p>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  /* 4. Riscrittura passaggi chiave */
+  const risc = r.riscrittura || {};
+  const riscrKeys = [
+    { key: 'primo_messaggio',       label: '💬 Primo messaggio' },
+    { key: 'domande_obiettivo_pain',label: '🎯 Domande obiettivo & pain' },
+    { key: 'proposta_prenotazione', label: '📅 Proposta prenotazione' },
+    { key: 'chiusura_caparra',      label: '✅ Chiusura & caparra' },
+  ];
+  const riscrHtml = riscrKeys.filter(k => risc[k.key]).map(k => `
+    <div class="feedback-card">
+      <div class="feedback-cat" style="margin-bottom:8px">${k.label}</div>
+      <div class="reply-box copy-target" style="font-size:13px">${escHtml(risc[k.key])}</div>
+      <button class="copy-btn" onclick="copyText(this)">📋 Copia</button>
+    </div>`).join('');
+  if (riscrHtml) {
+    html += `<div class="card section-gap"><div class="card-title">✍️ Riscrittura passaggi chiave</div>${riscrHtml}</div>`;
+  }
+
+  /* 5. Mini-checklist */
+  const checklist = r.checklist || [];
+  if (checklist.length) {
     html += `
-    <div class="two-col">
-      <div class="col-box amber">
-        <h4>Frase da evitare</h4>
-        <p class="frase">"${escHtml(r.frase_da_evitare)}"</p>
-      </div>
-      <div class="col-box teal">
-        <h4>Alternativa migliore</h4>
-        <p class="frase">"${escHtml(r.frase_consigliata || '')}"</p>
-      </div>
+    <div class="card section-gap">
+      <div class="card-title">✔ Checklist per questo caso</div>
+      <ol style="margin:0;padding-left:20px;line-height:2">
+        ${checklist.map(s => `<li>${escHtml(s)}</li>`).join('')}
+      </ol>
     </div>`;
   }
 
   resultsDiv.innerHTML = html;
+}
 
-  /* Bottone copia */
-  const btnCopy = document.getElementById('btn-copy');
-  if (btnCopy) {
-    btnCopy.addEventListener('click', () => {
-      const testo = document.getElementById('reply-text').textContent;
-      navigator.clipboard.writeText(testo).then(() => {
-        btnCopy.textContent = '✓ Copiato!';
-        setTimeout(() => { btnCopy.textContent = '📋 Copia'; }, 2000);
-      });
-    });
-  }
+/* Copia testo dal bottone "Copia" dentro un feedback-card */
+function copyText(btn) {
+  const box = btn.previousElementSibling;
+  navigator.clipboard.writeText(box.textContent.trim()).then(() => {
+    btn.textContent = '✓ Copiato!';
+    setTimeout(() => { btn.textContent = '📋 Copia'; }, 2000);
+  });
+}
+
+/* Renderizza un badge voto inline */
+function renderMiniBadge(label, val) {
+  if (!val) return '';
+  const c = scoreColor(val);
+  return `<span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#444">
+    <span style="background:${c};color:#fff;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:11px">${val}</span>
+    ${escHtml(label)}
+  </span>`;
 }
 
 /* ═══════════════════════════════════════════════════════
