@@ -903,6 +903,18 @@ fileAudio.addEventListener('change', async () => {
    GOHIGHLEVEL — ricerca per nome paziente
 ═══════════════════════════════════════════════════════ */
 
+// Mappa tipo canale GHL → icona + label + colore
+function channelInfo(tipo) {
+  const t = (tipo || '').toLowerCase();
+  if (t.includes('instagram') || t === 'ig') return { icon: '📸', label: 'Instagram', color: '#c13584' };
+  if (t.includes('whatsapp') || t === 'wa')  return { icon: '💬', label: 'WhatsApp',  color: '#25d366' };
+  if (t.includes('facebook') || t === 'fb')  return { icon: '👤', label: 'Facebook',  color: '#1877f2' };
+  if (t.includes('sms'))                     return { icon: '📱', label: 'SMS',        color: '#6366f1' };
+  if (t.includes('email'))                   return { icon: '📧', label: 'Email',      color: '#f59e0b' };
+  if (t.includes('call') || t.includes('phone')) return { icon: '📞', label: 'Chiamata', color: '#64748b' };
+  return { icon: '💬', label: tipo || 'Chat', color: '#3b82f6' };
+}
+
 // Stato GHL locale
 const ghlState = { selectedContact: null };
 
@@ -981,12 +993,15 @@ async function ghlLoadConversations(contactId, contactName) {
 
     ghlConvList.innerHTML = `<div style="font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:#888;margin-bottom:8px">Conversazioni di ${escHtml(contactName)}</div>` +
       convs.map(cv => {
-        const tipo = cv.type || cv.channel || 'Chat';
+        const tipo = (cv.type || cv.channel || '').toLowerCase();
+        const { icon, label, color } = channelInfo(tipo);
         const data_str = cv.dateUpdated ? new Date(cv.dateUpdated).toLocaleDateString('it-IT') : '';
+        const preview = (cv.lastMessageBody || 'Apri conversazione').slice(0, 60);
         return `<div class="ghl-conv-item" data-conv-id="${cv.id}" data-name="${escHtml(contactName)}">
-          <span class="ghl-conv-type">${escHtml(tipo)}</span>
-          <span>${escHtml(cv.lastMessageBody || 'Apri conversazione')}</span>
-          <span style="margin-left:auto;font-size:11px;color:#aaa">${data_str}</span>
+          <span style="font-size:18px">${icon}</span>
+          <span class="ghl-conv-type" style="color:${color}">${label}</span>
+          <span style="color:#666;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px">${escHtml(preview)}</span>
+          <span style="margin-left:auto;font-size:11px;color:#aaa;flex-shrink:0">${data_str}</span>
         </div>`;
       }).join('');
 
