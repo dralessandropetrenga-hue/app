@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analizzatore Comunicazioni — Dr. Petrenga</title>
+  <style>
+    /* ── Reset & base ─────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f5f4f0;
+      color: #1a1a1a;
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ── Layout ───────────────────────────────────────── */
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 20px 60px;
+    }
+
+    /* ── Header ───────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      padding: 36px 0 28px;
+      border-bottom: 0.5px solid rgba(0,0,0,0.1);
+      margin-bottom: 28px;
+    }
+
+    header h1 {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+    }
+
+    header p {
+      font-size: 13px;
+      color: #666;
+      margin-top: 3px;
+    }
+
+    .brand {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      color: #999;
+      text-transform: uppercase;
+      text-align: right;
+    }
+
+    /* ── Card ─────────────────────────────────────────── */
+    .card {
+      background: #fff;
+      border: 0.5px solid rgba(0,0,0,0.1);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #999;
+      margin-bottom: 14px;
+    }
+
+    /* ── Istruzioni personalizzate ────────────────────── */
+    .instructions-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+      padding: 14px 20px;
+      background: #fff;
+      border: 0.5px solid rgba(0,0,0,0.1);
+      border-radius: 12px;
+      margin-bottom: 4px;
+      font-size: 13px;
+      font-weight: 500;
+      transition: background 0.15s;
+    }
+
+    .instructions-toggle:hover { background: #fafafa; }
+
+    .instructions-toggle .arrow {
+      font-size: 10px;
+      color: #999;
+      transition: transform 0.2s;
+    }
+
+    .instructions-toggle.open .arrow { transform: rotate(90deg); }
+
+    .instructions-panel {
+      display: none;
+      background: #fff;
+      border: 0.5px solid rgba(0,0,0,0.1);
+      border-top: none;
+      border-radius: 0 0 12px 12px;
+      padding: 16px 20px 20px;
+      margin-bottom: 16px;
+    }
+
+    .instructions-panel.open { display: block; }
+
+    .instructions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .instr-box label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .instr-box.miriana label { color: #2e7d32; }
+    .instr-box.carmen label { color: #1565c0; }
+
+    .instr-box textarea {
+      width: 100%;
+      border: 0.5px solid rgba(0,0,0,0.15);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 90px;
+      outline: none;
+      transition: border-color 0.15s;
+      background: #fafafa;
+    }
+
+    .instr-box.miriana textarea:focus { border-color: #2e7d32; background: #fff; }
+    .instr-box.carmen textarea:focus  { border-color: #1565c0; background: #fff; }
+
+    .instr-save-hint {
+      font-size: 11px;
+      color: #aaa;
+      margin-top: 8px;
+      text-align: right;
+    }
+
+    /* ── Canale ───────────────────────────────────────── */
+    .channel-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .channel-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 16px 12px;
+      border: 0.5px solid rgba(0,0,0,0.12);
+      border-radius: 10px;
+      background: #fff;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+
+    .channel-btn:hover { background: #f7f7f7; }
+
+    .channel-btn.active {
+      background: #e8f0fb;
+      border-color: #3b82f6;
+      color: #1d4ed8;
+    }
+
+    .channel-btn .icon { font-size: 22px; }
+    .channel-btn .label { font-size: 12px; font-weight: 500; }
+
+    /* ── Input area ───────────────────────────────────── */
+    #chat-input {
+      width: 100%;
+      border: 0.5px solid rgba(0,0,0,0.15);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 14px;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 130px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    #chat-input:focus { border-color: #3b82f6; }
+
+    /* ── Thumbnails ───────────────────────────────────── */
+    #thumb-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .thumb-wrap {
+      position: relative;
+      width: 72px;
+      height: 72px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 0.5px solid rgba(0,0,0,0.1);
+    }
+
+    .thumb-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .thumb-remove {
+      position: absolute;
+      top: 3px;
+      right: 3px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.55);
+      color: #fff;
+      font-size: 10px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+
+    /* ── Bottoni ──────────────────────────────────────── */
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .btn {
+      padding: 9px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      border: 0.5px solid transparent;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: #1d4ed8;
+      color: #fff;
+      border-color: #1d4ed8;
+    }
+
+    .btn-primary:hover:not(:disabled) { background: #1e40af; }
+    .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .btn-secondary {
+      background: #fff;
+      color: #333;
+      border-color: rgba(0,0,0,0.15);
+    }
+
+    .btn-secondary:hover { background: #f5f5f5; }
+
+    .btn-danger {
+      background: #fff;
+      color: #dc2626;
+      border-color: rgba(220,38,38,0.25);
+    }
+
+    .btn-danger:hover { background: #fef2f2; }
+
+    /* ── GHL section ──────────────────────────────────── */
+    .ghl-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .ghl-row input {
+      flex: 1;
+      padding: 9px 12px;
+      border: 0.5px solid rgba(0,0,0,0.15);
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .ghl-row input:focus { border-color: #3b82f6; }
+
+    /* ── Errore ───────────────────────────────────────── */
+    #error-msg {
+      display: none;
+      color: #dc2626;
+      font-size: 13px;
+      margin-top: 8px;
+      padding: 10px 14px;
+      background: #fef2f2;
+      border-radius: 8px;
+      border: 0.5px solid rgba(220,38,38,0.2);
+    }
+
+    /* ── Risultati ────────────────────────────────────── */
+    #results { margin-top: 8px; }
+
+    /* Voto generale */
+    .score-card {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .score-circle {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .score-circle.green  { background: #16a34a; }
+    .score-circle.orange { background: #ea580c; }
+    .score-circle.red    { background: #dc2626; }
+
+    .score-meta { flex: 1; }
+    .score-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+
+    .badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 20px;
+      background: #f0f0f0;
+      color: #555;
+    }
+
+    .badge.tipo    { background: #ede9fe; color: #5b21b6; }
+    .badge.segr    { background: #dbeafe; color: #1e40af; }
+    .badge.canale  { background: #dcfce7; color: #166534; }
+
+    .score-sintesi { font-size: 14px; color: #444; line-height: 1.55; }
+
+    /* Due colonne */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .col-box {
+      border-radius: 10px;
+      padding: 16px;
+      font-size: 13px;
+    }
+
+    .col-box.green { background: #f0fdf4; border: 0.5px solid #bbf7d0; }
+    .col-box.red   { background: #fef2f2; border: 0.5px solid #fecaca; }
+    .col-box.amber { background: #fffbeb; border: 0.5px solid #fde68a; }
+    .col-box.teal  { background: #f0fdfa; border: 0.5px solid #99f6e4; }
+
+    .col-box h4 {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .col-box.green h4 { color: #16a34a; }
+    .col-box.red h4   { color: #dc2626; }
+    .col-box.amber h4 { color: #d97706; }
+    .col-box.teal h4  { color: #0d9488; }
+
+    .col-box ul { padding-left: 16px; }
+    .col-box ul li { margin-bottom: 5px; line-height: 1.4; }
+
+    .col-box .frase { font-style: italic; line-height: 1.55; }
+
+    /* Feedback per area */
+    .feedback-card {
+      background: #fff;
+      border: 0.5px solid rgba(0,0,0,0.1);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 10px;
+    }
+
+    .feedback-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .mini-circle {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .feedback-cat { font-weight: 600; font-size: 14px; }
+
+    .feedback-comment { font-size: 13px; color: #555; margin-bottom: 8px; line-height: 1.5; }
+
+    .feedback-tip {
+      background: #f8f8f8;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: #444;
+      line-height: 1.5;
+    }
+
+    .feedback-tip::before { content: "💡 "; }
+
+    /* Risposta suggerita */
+    .reply-box {
+      background: #eff6ff;
+      border: 0.5px solid #bfdbfe;
+      border-radius: 10px;
+      padding: 14px;
+      font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+      font-size: 13px;
+      font-weight: 300;
+      line-height: 1.65;
+      color: #1e3a5f;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .copy-btn {
+      margin-top: 10px;
+      padding: 7px 14px;
+      font-size: 12px;
+      background: #fff;
+      border: 0.5px solid #93c5fd;
+      border-radius: 7px;
+      color: #1d4ed8;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 500;
+      transition: background 0.15s;
+    }
+
+    .copy-btn:hover { background: #dbeafe; }
+
+    /* Sezione GHL */
+    .ghl-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    /* ── Responsive ───────────────────────────────────── */
+    @media (max-width: 600px) {
+      .instructions-grid,
+      .two-col { grid-template-columns: 1fr; }
+      .channel-grid { grid-template-columns: repeat(3, 1fr); }
+      .score-card { flex-direction: column; align-items: flex-start; }
+    }
+
+    /* ── Divider ──────────────────────────────────────── */
+    .section-gap { margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ── Header ───────────────────────────────────────── -->
+  <header>
+    <div>
+      <h1>Analizzatore comunicazioni</h1>
+      <p>Feedback per Miriana &amp; Carmen</p>
+    </div>
+    <div class="brand">Dr. Petrenga · You Are Art</div>
+  </header>
+
+  <!-- ── Istruzioni personalizzate ────────────────────── -->
+  <div class="instructions-toggle" id="instr-toggle">
+    <span class="arrow">▸</span>
+    <span>Istruzioni personalizzate per le segretarie</span>
+  </div>
+  <div class="instructions-panel" id="instr-panel">
+    <div class="instructions-grid">
+      <div class="instr-box miriana">
+        <label>Miriana — Instagram</label>
+        <textarea id="instr-miriana" placeholder="Es: Miriana deve sempre presentarsi con nome, rispondere entro 2 ore, non usare abbreviazioni..."></textarea>
+      </div>
+      <div class="instr-box carmen">
+        <label>Carmen — WhatsApp &amp; Telefonate</label>
+        <textarea id="instr-carmen" placeholder="Es: Carmen deve confermare sempre la prenotazione, chiedere il motivo della visita, proporre slot alternativi..."></textarea>
+      </div>
+    </div>
+    <div class="instr-save-hint">Le istruzioni vengono salvate automaticamente</div>
+  </div>
+
+  <!-- ── Selezione canale ──────────────────────────────── -->
+  <div class="card section-gap">
+    <div class="card-title">Canale di comunicazione</div>
+    <div class="channel-grid">
+      <button class="channel-btn active" data-channel="instagram">
+        <span class="icon">📸</span>
+        <span class="label">Instagram</span>
+      </button>
+      <button class="channel-btn" data-channel="whatsapp">
+        <span class="icon">💬</span>
+        <span class="label">WhatsApp</span>
+      </button>
+      <button class="channel-btn" data-channel="telefonata">
+        <span class="icon">📞</span>
+        <span class="label">Telefonata</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── GoHighLevel ───────────────────────────────────── -->
+  <div class="card section-gap">
+    <div class="card-title">Carica da GoHighLevel (opzionale)</div>
+    <span class="ghl-label">ID conversazione o contatto GHL</span>
+    <div class="ghl-row">
+      <input type="text" id="ghl-id" placeholder="Es: abc123xyz — incolla l'ID della conversazione GHL" />
+      <button class="btn btn-secondary" id="btn-ghl">📥 Carica chat GHL</button>
+    </div>
+  </div>
+
+  <!-- ── Area input ────────────────────────────────────── -->
+  <div class="card section-gap">
+    <div class="card-title">Conversazione / Trascrizione</div>
+    <textarea id="chat-input" placeholder="Incolla qui il testo della conversazione, oppure carica un file audio o uno screenshot..."></textarea>
+    <div id="thumb-container"></div>
+    <div id="error-msg"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-analyze" disabled>Analizza</button>
+      <button class="btn btn-secondary" id="btn-audio">🎙 Carica audio</button>
+      <button class="btn btn-secondary" id="btn-img">🖼 Carica screenshot</button>
+      <button class="btn btn-secondary" id="btn-txt">📄 Carica .txt</button>
+      <button class="btn btn-danger" id="btn-clear">Cancella tutto</button>
+    </div>
+    <!-- Input nascosti -->
+    <input type="file" id="file-audio" accept="audio/*" style="display:none" />
+    <input type="file" id="file-img" accept="image/*" multiple style="display:none" />
+    <input type="file" id="file-txt" accept=".txt,text/plain" style="display:none" />
+  </div>
+
+  <!-- ── Risultati ─────────────────────────────────────── -->
+  <div id="results"></div>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   STATO APPLICAZIONE
+═══════════════════════════════════════════════════════ */
+const state = {
+  channel: 'instagram',   // instagram | whatsapp | telefonata
+  images: [],             // [{ name, base64, mediaType }]
+};
+
+/* ═══════════════════════════════════════════════════════
+   SYSTEM PROMPT BASE
+═══════════════════════════════════════════════════════ */
+const BASE_SYSTEM_PROMPT = `Sei un coach di comunicazione per lo studio medico estetico del Dr. Alessandro Petrenga (Roma e Milano). Claim dello studio: "You Are Art". Specializzazioni: Medicina Estetica, Chirurgia Estetica, Senologia.
+
+Le segretarie sono:
+- Miriana: gestisce social media e chat Instagram
+- Carmen: gestisce chat WhatsApp, telefonate, accoglienza, prenotazioni
+
+Il tono ideale dello studio è: PROFESSIONALE MA CALDO. Mai freddo o burocratico, mai troppo informale.
+
+Analizza la conversazione/telefonata fornita e restituisci SOLO un JSON puro senza backtick con questa struttura:
+{
+  "tipo": "chat" o "telefonata",
+  "segretaria": "Miriana" o "Carmen" o "Non identificata",
+  "valutazione_generale": numero da 1 a 10,
+  "sintesi": "2-3 frasi sull'andamento generale",
+  "punti_forza": ["punto 1", "punto 2"],
+  "aree_miglioramento": ["area 1", "area 2"],
+  "feedback": [
+    { "categoria": "Tono e stile", "voto": numero 1-10, "commento": "...", "suggerimento": "..." },
+    { "categoria": "Prenotazioni/Info", "voto": numero 1-10, "commento": "...", "suggerimento": "..." },
+    { "categoria": "Gestione obiezioni", "voto": numero 1-10, "commento": "...", "suggerimento": "..." },
+    { "categoria": "Conversione lead", "voto": numero 1-10, "commento": "...", "suggerimento": "..." }
+  ],
+  "risposta_suggerita": "risposta ideale da inviare oppure stringa vuota",
+  "frase_da_evitare": "frase usata da evitare oppure stringa vuota",
+  "frase_consigliata": "alternativa migliore oppure stringa vuota"
+}`;
+
+/* ═══════════════════════════════════════════════════════
+   ELEMENTI DOM
+═══════════════════════════════════════════════════════ */
+const chatInput     = document.getElementById('chat-input');
+const thumbContainer= document.getElementById('thumb-container');
+const errorMsg      = document.getElementById('error-msg');
+const resultsDiv    = document.getElementById('results');
+const btnAnalyze    = document.getElementById('btn-analyze');
+const btnAudio      = document.getElementById('btn-audio');
+const btnImg        = document.getElementById('btn-img');
+const btnTxt        = document.getElementById('btn-txt');
+const btnClear      = document.getElementById('btn-clear');
+const fileAudio     = document.getElementById('file-audio');
+const fileImg       = document.getElementById('file-img');
+const fileTxt       = document.getElementById('file-txt');
+const instrToggle   = document.getElementById('instr-toggle');
+const instrPanel    = document.getElementById('instr-panel');
+const instrMiriana  = document.getElementById('instr-miriana');
+const instrCarmen   = document.getElementById('instr-carmen');
+const btnGhl        = document.getElementById('btn-ghl');
+const ghlIdInput    = document.getElementById('ghl-id');
+
+/* ═══════════════════════════════════════════════════════
+   LOCALSTORAGE — istruzioni
+═══════════════════════════════════════════════════════ */
+function loadInstructions() {
+  instrMiriana.value = localStorage.getItem('instr_miriana') || '';
+  instrCarmen.value  = localStorage.getItem('instr_carmen')  || '';
+}
+
+function saveInstructions() {
+  localStorage.setItem('instr_miriana', instrMiriana.value);
+  localStorage.setItem('instr_carmen',  instrCarmen.value);
+}
+
+instrMiriana.addEventListener('input', saveInstructions);
+instrCarmen.addEventListener('input', saveInstructions);
+loadInstructions();
+
+/* ═══════════════════════════════════════════════════════
+   PANNELLO ISTRUZIONI — toggle
+═══════════════════════════════════════════════════════ */
+instrToggle.addEventListener('click', () => {
+  instrToggle.classList.toggle('open');
+  instrPanel.classList.toggle('open');
+});
+
+/* ═══════════════════════════════════════════════════════
+   CANALE — selezione
+═══════════════════════════════════════════════════════ */
+document.querySelectorAll('.channel-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.channel-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.channel = btn.dataset.channel;
+  });
+});
+
+/* ═══════════════════════════════════════════════════════
+   ABILITA/DISABILITA bottone Analizza
+═══════════════════════════════════════════════════════ */
+function updateAnalyzeBtn() {
+  const hasText   = chatInput.value.trim().length > 0;
+  const hasImages = state.images.length > 0;
+  btnAnalyze.disabled = !(hasText || hasImages);
+}
+
+chatInput.addEventListener('input', updateAnalyzeBtn);
+
+/* ═══════════════════════════════════════════════════════
+   ERRORI
+═══════════════════════════════════════════════════════ */
+function showError(msg) {
+  errorMsg.textContent = msg;
+  errorMsg.style.display = 'block';
+}
+
+function clearError() {
+  errorMsg.textContent = '';
+  errorMsg.style.display = 'none';
+}
+
+/* ═══════════════════════════════════════════════════════
+   THUMBNAILS immagini
+═══════════════════════════════════════════════════════ */
+function addThumb(imgObj, idx) {
+  const wrap = document.createElement('div');
+  wrap.className = 'thumb-wrap';
+  wrap.dataset.idx = idx;
+
+  const img = document.createElement('img');
+  img.src = `data:${imgObj.mediaType};base64,${imgObj.base64}`;
+  img.alt = imgObj.name;
+
+  const rmBtn = document.createElement('button');
+  rmBtn.className = 'thumb-remove';
+  rmBtn.innerHTML = '✕';
+  rmBtn.title = 'Rimuovi';
+  rmBtn.addEventListener('click', () => {
+    state.images.splice(idx, 1);
+    renderThumbs();
+    updateAnalyzeBtn();
+  });
+
+  wrap.appendChild(img);
+  wrap.appendChild(rmBtn);
+  thumbContainer.appendChild(wrap);
+}
+
+function renderThumbs() {
+  thumbContainer.innerHTML = '';
+  state.images.forEach((img, i) => addThumb(img, i));
+}
+
+/* ═══════════════════════════════════════════════════════
+   UPLOAD IMMAGINI
+═══════════════════════════════════════════════════════ */
+btnImg.addEventListener('click', () => fileImg.click());
+
+fileImg.addEventListener('change', () => {
+  const files = Array.from(fileImg.files);
+  let pending = files.length;
+  if (!pending) return;
+
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      // Estrai base64 puro (senza il prefisso data:...;base64,)
+      const full   = e.target.result;
+      const base64 = full.split(',')[1];
+      state.images.push({ name: file.name, base64, mediaType: file.type });
+      pending--;
+      if (pending === 0) {
+        renderThumbs();
+        updateAnalyzeBtn();
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+
+  fileImg.value = '';
+});
+
+/* ═══════════════════════════════════════════════════════
+   UPLOAD .TXT
+═══════════════════════════════════════════════════════ */
+btnTxt.addEventListener('click', () => fileTxt.click());
+
+fileTxt.addEventListener('change', () => {
+  const file = fileTxt.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    chatInput.value += (chatInput.value ? '\n\n' : '') + e.target.result;
+    updateAnalyzeBtn();
+  };
+  reader.readAsText(file);
+  fileTxt.value = '';
+});
+
+/* ═══════════════════════════════════════════════════════
+   UPLOAD AUDIO → trascrizione Groq
+═══════════════════════════════════════════════════════ */
+btnAudio.addEventListener('click', () => fileAudio.click());
+
+fileAudio.addEventListener('change', async () => {
+  const file = fileAudio.files[0];
+  if (!file) return;
+
+  const origLabel = btnAudio.textContent;
+  btnAudio.textContent = 'Trascrizione in corso...';
+  btnAudio.disabled = true;
+  clearError();
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+
+    const res = await fetch('/api/transcribe', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || `Errore ${res.status}`);
+    }
+
+    const testo = data.text || '';
+    chatInput.value += (chatInput.value ? '\n\n' : '') + testo;
+    updateAnalyzeBtn();
+  } catch (err) {
+    showError('Errore trascrizione: ' + err.message);
+  } finally {
+    btnAudio.textContent = origLabel;
+    btnAudio.disabled = false;
+    fileAudio.value = '';
+  }
+});
+
+/* ═══════════════════════════════════════════════════════
+   GOHIGHLEVEL — carica conversazione
+═══════════════════════════════════════════════════════ */
+btnGhl.addEventListener('click', async () => {
+  const id = ghlIdInput.value.trim();
+  if (!id) {
+    showError('Inserisci un ID conversazione GoHighLevel.');
+    return;
+  }
+
+  const origLabel = btnGhl.textContent;
+  btnGhl.textContent = 'Caricamento...';
+  btnGhl.disabled = true;
+  clearError();
+
+  try {
+    const res = await fetch('/api/ghl', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ conversationId: id }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || `Errore ${res.status}`);
+    }
+
+    chatInput.value = data.text || '';
+    updateAnalyzeBtn();
+  } catch (err) {
+    showError('Errore GoHighLevel: ' + err.message);
+  } finally {
+    btnGhl.textContent = origLabel;
+    btnGhl.disabled = false;
+  }
+});
+
+/* ═══════════════════════════════════════════════════════
+   CANCELLA TUTTO
+═══════════════════════════════════════════════════════ */
+btnClear.addEventListener('click', () => {
+  chatInput.value = '';
+  state.images = [];
+  renderThumbs();
+  updateAnalyzeBtn();
+  clearError();
+  resultsDiv.innerHTML = '';
+  ghlIdInput.value = '';
+});
+
+/* ═══════════════════════════════════════════════════════
+   COLORE VOTO
+═══════════════════════════════════════════════════════ */
+function scoreColor(n) {
+  if (n >= 8) return '#16a34a';
+  if (n >= 6) return '#ea580c';
+  return '#dc2626';
+}
+
+function scoreClass(n) {
+  if (n >= 8) return 'green';
+  if (n >= 6) return 'orange';
+  return 'red';
+}
+
+/* ═══════════════════════════════════════════════════════
+   CANALE LABEL
+═══════════════════════════════════════════════════════ */
+const CHANNEL_LABELS = {
+  instagram: '📸 Instagram',
+  whatsapp:  '💬 WhatsApp',
+  telefonata:'📞 Telefonata',
+};
+
+/* ═══════════════════════════════════════════════════════
+   RENDER RISULTATI
+═══════════════════════════════════════════════════════ */
+function renderResults(r) {
+  let html = '';
+
+  /* 1. Voto generale */
+  const cls = scoreClass(r.valutazione_generale);
+  html += `
+  <div class="card section-gap">
+    <div class="score-card">
+      <div class="score-circle ${cls}">${r.valutazione_generale}</div>
+      <div class="score-meta">
+        <div class="score-badges">
+          <span class="badge tipo">${r.tipo || '—'}</span>
+          <span class="badge segr">${r.segretaria || '—'}</span>
+          <span class="badge canale">${CHANNEL_LABELS[state.channel] || state.channel}</span>
+        </div>
+        <div class="score-sintesi">${escHtml(r.sintesi || '')}</div>
+      </div>
+    </div>
+  </div>`;
+
+  /* 2. Punti forza / aree miglioramento */
+  const forza = (r.punti_forza || []).map(p => `<li>${escHtml(p)}</li>`).join('');
+  const miglio = (r.aree_miglioramento || []).map(p => `<li>${escHtml(p)}</li>`).join('');
+  html += `
+  <div class="two-col">
+    <div class="col-box green">
+      <h4>Punti di forza</h4>
+      <ul>${forza}</ul>
+    </div>
+    <div class="col-box red">
+      <h4>Da migliorare</h4>
+      <ul>${miglio}</ul>
+    </div>
+  </div>`;
+
+  /* 3. Feedback per area */
+  (r.feedback || []).forEach(fb => {
+    const c = scoreColor(fb.voto);
+    html += `
+    <div class="feedback-card">
+      <div class="feedback-header">
+        <div class="mini-circle" style="background:${c}">${fb.voto}</div>
+        <div class="feedback-cat">${escHtml(fb.categoria)}</div>
+      </div>
+      <div class="feedback-comment">${escHtml(fb.commento || '')}</div>
+      <div class="feedback-tip">${escHtml(fb.suggerimento || '')}</div>
+    </div>`;
+  });
+
+  /* 4. Risposta suggerita */
+  if (r.risposta_suggerita) {
+    html += `
+    <div class="card section-gap">
+      <div class="card-title">Risposta suggerita</div>
+      <div class="reply-box" id="reply-text">${escHtml(r.risposta_suggerita)}</div>
+      <button class="copy-btn" id="btn-copy">📋 Copia</button>
+    </div>`;
+  }
+
+  /* 5. Frase da evitare / alternativa */
+  if (r.frase_da_evitare) {
+    html += `
+    <div class="two-col">
+      <div class="col-box amber">
+        <h4>Frase da evitare</h4>
+        <p class="frase">"${escHtml(r.frase_da_evitare)}"</p>
+      </div>
+      <div class="col-box teal">
+        <h4>Alternativa migliore</h4>
+        <p class="frase">"${escHtml(r.frase_consigliata || '')}"</p>
+      </div>
+    </div>`;
+  }
+
+  resultsDiv.innerHTML = html;
+
+  /* Bottone copia */
+  const btnCopy = document.getElementById('btn-copy');
+  if (btnCopy) {
+    btnCopy.addEventListener('click', () => {
+      const testo = document.getElementById('reply-text').textContent;
+      navigator.clipboard.writeText(testo).then(() => {
+        btnCopy.textContent = '✓ Copiato!';
+        setTimeout(() => { btnCopy.textContent = '📋 Copia'; }, 2000);
+      });
+    });
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   ESCAPE HTML
+═══════════════════════════════════════════════════════ */
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/* ═══════════════════════════════════════════════════════
+   COSTRUISCI SYSTEM PROMPT con istruzioni personalizzate
+═══════════════════════════════════════════════════════ */
+function buildSystemPrompt() {
+  let prompt = BASE_SYSTEM_PROMPT;
+  const iM = instrMiriana.value.trim();
+  const iC = instrCarmen.value.trim();
+
+  if (iM) {
+    prompt += `\n\nISTRUZIONI SPECIFICHE PER MIRIANA:\n${iM}`;
+  }
+  if (iC) {
+    prompt += `\n\nISTRUZIONI SPECIFICHE PER CARMEN:\n${iC}`;
+  }
+  return prompt;
+}
+
+/* ═══════════════════════════════════════════════════════
+   ANALISI
+═══════════════════════════════════════════════════════ */
+btnAnalyze.addEventListener('click', async () => {
+  clearError();
+  resultsDiv.innerHTML = '';
+
+  const testo = chatInput.value.trim();
+
+  /* Costruisci content blocks */
+  const contentBlocks = [];
+
+  /* Testo canale per il contesto */
+  const canaleTesto = {
+    instagram:  'Canale: Instagram (gestito da Miriana)',
+    whatsapp:   'Canale: WhatsApp (gestito da Carmen)',
+    telefonata: 'Canale: Telefonata (gestito da Carmen)',
+  }[state.channel];
+
+  if (testo) {
+    contentBlocks.push({
+      type: 'text',
+      text: `${canaleTesto}\n\n${testo}`,
+    });
+  }
+
+  /* Immagini in base64 */
+  state.images.forEach(img => {
+    contentBlocks.push({
+      type: 'image',
+      source: {
+        type: 'base64',
+        media_type: img.mediaType,
+        data: img.base64,
+      },
+    });
+  });
+
+  if (contentBlocks.length === 0) return;
+
+  /* UI loading */
+  const origLabel = btnAnalyze.textContent;
+  btnAnalyze.textContent = 'Analisi in corso...';
+  btnAnalyze.disabled = true;
+
+  try {
+    const payload = {
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 4096,
+      system: buildSystemPrompt(),
+      messages: [{ role: 'user', content: contentBlocks }],
+    };
+
+    const res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || `Errore ${res.status}`);
+    }
+
+    /* Estrai il testo dalla risposta Anthropic */
+    const rawText = data.content?.[0]?.text || '';
+
+    /* Pulisci eventuali backtick residui */
+    const cleaned = rawText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
+
+    let result;
+    try {
+      result = JSON.parse(cleaned);
+    } catch {
+      throw new Error('Risposta non valida dal modello. Riprova.');
+    }
+
+    renderResults(result);
+
+    /* Scroll ai risultati */
+    resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch (err) {
+    showError('Errore analisi: ' + err.message);
+  } finally {
+    btnAnalyze.textContent = origLabel;
+    btnAnalyze.disabled = false;
+    updateAnalyzeBtn();
+  }
+});
+
+/* ═══════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════ */
+updateAnalyzeBtn();
+</script>
+</body>
+</html>
