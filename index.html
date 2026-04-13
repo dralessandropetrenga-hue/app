@@ -73,84 +73,107 @@
       margin-bottom: 14px;
     }
 
-    /* ── Istruzioni personalizzate ────────────────────── */
-    .instructions-toggle {
+    /* ── Chat con Claude ──────────────────────────────── */
+    .ai-chat-wrap {
+      margin-top: 16px;
+    }
+
+    .chat-messages {
+      max-height: 420px;
+      overflow-y: auto;
       display: flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      user-select: none;
-      padding: 14px 20px;
-      background: #fff;
-      border: 0.5px solid rgba(0,0,0,0.1);
-      border-radius: 12px;
-      margin-bottom: 4px;
-      font-size: 13px;
-      font-weight: 500;
-      transition: background 0.15s;
+      flex-direction: column;
+      gap: 12px;
+      padding: 4px 0 12px;
     }
 
-    .instructions-toggle:hover { background: #fafafa; }
+    .chat-bubble {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      max-width: 88%;
+    }
 
-    .instructions-toggle .arrow {
+    .chat-bubble.user  { align-self: flex-end; align-items: flex-end; }
+    .chat-bubble.ai    { align-self: flex-start; align-items: flex-start; }
+
+    .chat-bubble-label {
       font-size: 10px;
-      color: #999;
-      transition: transform 0.2s;
-    }
-
-    .instructions-toggle.open .arrow { transform: rotate(90deg); }
-
-    .instructions-panel {
-      display: none;
-      background: #fff;
-      border: 0.5px solid rgba(0,0,0,0.1);
-      border-top: none;
-      border-radius: 0 0 12px 12px;
-      padding: 16px 20px 20px;
-      margin-bottom: 16px;
-    }
-
-    .instructions-panel.open { display: block; }
-
-    .instructions-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-    }
-
-    .instr-box label {
-      display: block;
-      font-size: 12px;
       font-weight: 600;
-      margin-bottom: 6px;
-    }
-
-    .instr-box.miriana label { color: #2e7d32; }
-    .instr-box.carmen label { color: #1565c0; }
-
-    .instr-box textarea {
-      width: 100%;
-      border: 0.5px solid rgba(0,0,0,0.15);
-      border-radius: 8px;
-      padding: 10px 12px;
-      font-size: 13px;
-      font-family: inherit;
-      resize: vertical;
-      min-height: 90px;
-      outline: none;
-      transition: border-color 0.15s;
-      background: #fafafa;
-    }
-
-    .instr-box.miriana textarea:focus { border-color: #2e7d32; background: #fff; }
-    .instr-box.carmen textarea:focus  { border-color: #1565c0; background: #fff; }
-
-    .instr-save-hint {
-      font-size: 11px;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
       color: #aaa;
-      margin-top: 8px;
-      text-align: right;
+      margin-bottom: 1px;
     }
+
+    .chat-bubble-text {
+      padding: 11px 15px;
+      border-radius: 14px;
+      font-size: 13.5px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .chat-bubble.user .chat-bubble-text {
+      background: #1d4ed8;
+      color: #fff;
+      border-radius: 14px 14px 4px 14px;
+    }
+
+    .chat-bubble.ai .chat-bubble-text {
+      background: #f3f4f6;
+      color: #1a1a1a;
+      border-radius: 14px 14px 14px 4px;
+    }
+
+    .chat-bubble.ai.loading .chat-bubble-text {
+      color: #888;
+      font-style: italic;
+    }
+
+    .chat-input-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      align-items: flex-end;
+    }
+
+    .chat-input-row textarea {
+      flex: 1;
+      border: 0.5px solid rgba(0,0,0,0.15);
+      border-radius: 10px;
+      padding: 10px 13px;
+      font-size: 14px;
+      font-family: inherit;
+      resize: none;
+      outline: none;
+      min-height: 44px;
+      max-height: 120px;
+      transition: border-color 0.15s;
+      line-height: 1.4;
+    }
+
+    .chat-input-row textarea:focus { border-color: #3b82f6; }
+
+    .chat-input-row .btn-send {
+      padding: 10px 18px;
+      background: #1d4ed8;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s;
+      flex-shrink: 0;
+      min-height: 44px;
+    }
+
+    .chat-input-row .btn-send:hover:not(:disabled) { background: #1e40af; }
+    .chat-input-row .btn-send:disabled { opacity: 0.45; cursor: not-allowed; }
 
     /* ── Input area ───────────────────────────────────── */
     #chat-input {
@@ -501,11 +524,40 @@
     .ghl-conv-item:hover { background: #f0f4ff; }
     .ghl-conv-type { font-weight: 600; color: #3b82f6; }
 
-    /* ── Responsive ───────────────────────────────────── */
+    /* ── Responsive / Mobile ─────────────────────────── */
     @media (max-width: 600px) {
-      .instructions-grid,
+      .container { padding: 0 12px 60px; }
+
+      header { padding: 20px 0 18px; flex-direction: column; align-items: flex-start; gap: 6px; }
+      header h1 { font-size: 19px; }
+      .brand { font-size: 10px; }
+
+      .card { padding: 14px; }
+      .card-title { margin-bottom: 10px; }
+
+      .person-btn { padding: 16px 10px; font-size: 15px; }
+      .person-btn .person-icon { font-size: 26px; }
+
       .two-col { grid-template-columns: 1fr; }
-      .score-card { flex-direction: column; align-items: flex-start; }
+      .score-card { flex-direction: column; align-items: flex-start; gap: 12px; }
+      .score-circle { width: 60px; height: 60px; font-size: 24px; }
+
+      .btn-row { gap: 6px; }
+      .btn { padding: 10px 12px; font-size: 13px; }
+      .btn-primary { flex: 1; }
+
+      .ghl-row input { font-size: 16px; } /* evita zoom su iOS */
+      #chat-input { font-size: 16px; min-height: 100px; }
+
+      .history-item { padding: 12px 14px; gap: 10px; }
+      .history-toggle { padding: 13px 14px; }
+
+      .chat-input-row textarea { font-size: 16px; }
+      .chat-bubble { max-width: 95%; }
+      .chat-bubble-text { font-size: 13px; padding: 10px 13px; }
+
+      .reply-box { font-size: 12px; }
+      .feedback-tip { font-size: 12px; }
     }
 
     /* ── Divider ──────────────────────────────────────── */
@@ -707,25 +759,6 @@
     <div id="history-list"></div>
   </div>
 
-  <!-- ── Istruzioni personalizzate ────────────────────── -->
-  <div class="instructions-toggle" id="instr-toggle">
-    <span class="arrow">▸</span>
-    <span>Istruzioni personalizzate per le segretarie</span>
-  </div>
-  <div class="instructions-panel" id="instr-panel">
-    <div class="instructions-grid">
-      <div class="instr-box miriana">
-        <label>Miriana — Instagram</label>
-        <textarea id="instr-miriana" placeholder="Es: Miriana deve sempre presentarsi con nome, rispondere entro 2 ore, non usare abbreviazioni..."></textarea>
-      </div>
-      <div class="instr-box carmen">
-        <label>Carmen — WhatsApp &amp; Telefonate</label>
-        <textarea id="instr-carmen" placeholder="Es: Carmen deve confermare sempre la prenotazione, chiedere il motivo della visita, proporre slot alternativi..."></textarea>
-      </div>
-    </div>
-    <div class="instr-save-hint">Le istruzioni vengono salvate automaticamente</div>
-  </div>
-
   <!-- ── GoHighLevel ───────────────────────────────────── -->
   <div class="card section-gap">
     <div class="card-title">Carica da GoHighLevel</div>
@@ -761,6 +794,18 @@
 
   <!-- ── Risultati ─────────────────────────────────────── -->
   <div id="results"></div>
+
+  <!-- ── Chat con Claude sul report ───────────────────── -->
+  <div id="ai-chat-section" style="display:none" class="ai-chat-wrap">
+    <div class="card section-gap">
+      <div class="card-title">💬 Chiedi a Claude su questa conversazione</div>
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="chat-input-row">
+        <textarea id="chat-question" placeholder="Es: Come avrei dovuto rispondere quando ha chiesto il prezzo? Cosa avrei potuto dire diversamente?" rows="2"></textarea>
+        <button class="btn-send" id="btn-chat-send">Invia</button>
+      </div>
+    </div>
+  </div>
 
 </div>
 
@@ -839,10 +884,6 @@ const btnClear      = document.getElementById('btn-clear');
 const fileAudio     = document.getElementById('file-audio');
 const fileImg       = document.getElementById('file-img');
 const fileTxt       = document.getElementById('file-txt');
-const instrToggle   = document.getElementById('instr-toggle');
-const instrPanel    = document.getElementById('instr-panel');
-const instrMiriana  = document.getElementById('instr-miriana');
-const instrCarmen   = document.getElementById('instr-carmen');
 const btnMiriana    = document.getElementById('btn-miriana');
 const btnCarmen     = document.getElementById('btn-carmen');
 const personHint    = document.getElementById('person-hint');
@@ -854,31 +895,6 @@ const btnGhlSearch  = document.getElementById('btn-ghl-search');
 const ghlSearchInput= document.getElementById('ghl-search');
 const ghlResults    = document.getElementById('ghl-results');
 const ghlConvList   = document.getElementById('ghl-conv-list');
-
-/* ═══════════════════════════════════════════════════════
-   LOCALSTORAGE — istruzioni
-═══════════════════════════════════════════════════════ */
-function loadInstructions() {
-  instrMiriana.value = localStorage.getItem('instr_miriana') || '';
-  instrCarmen.value  = localStorage.getItem('instr_carmen')  || '';
-}
-
-function saveInstructions() {
-  localStorage.setItem('instr_miriana', instrMiriana.value);
-  localStorage.setItem('instr_carmen',  instrCarmen.value);
-}
-
-instrMiriana.addEventListener('input', saveInstructions);
-instrCarmen.addEventListener('input', saveInstructions);
-loadInstructions();
-
-/* ═══════════════════════════════════════════════════════
-   PANNELLO ISTRUZIONI — toggle
-═══════════════════════════════════════════════════════ */
-instrToggle.addEventListener('click', () => {
-  instrToggle.classList.toggle('open');
-  instrPanel.classList.toggle('open');
-});
 
 /* ═══════════════════════════════════════════════════════
    SELETTORE SEGRETARIA
@@ -1293,6 +1309,9 @@ btnClear.addEventListener('click', () => {
   updateAnalyzeBtn();
   clearError();
   resultsDiv.innerHTML = '';
+  aiChatSection.style.display = 'none';
+  chatMessages.innerHTML = '';
+  chatState.history = [];
   ghlSearchInput.value = '';
   ghlResults.classList.remove('visible');
   ghlConvList.classList.remove('visible');
@@ -1451,21 +1470,118 @@ function escHtml(str) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   COSTRUISCI SYSTEM PROMPT con istruzioni personalizzate
+   SYSTEM PROMPT
 ═══════════════════════════════════════════════════════ */
 function buildSystemPrompt() {
-  let prompt = BASE_SYSTEM_PROMPT;
-  const iM = instrMiriana.value.trim();
-  const iC = instrCarmen.value.trim();
-
-  if (iM) {
-    prompt += `\n\nISTRUZIONI SPECIFICHE PER MIRIANA:\n${iM}`;
-  }
-  if (iC) {
-    prompt += `\n\nISTRUZIONI SPECIFICHE PER CARMEN:\n${iC}`;
-  }
-  return prompt;
+  return BASE_SYSTEM_PROMPT;
 }
+
+/* ═══════════════════════════════════════════════════════
+   CHAT CON CLAUDE SUL REPORT
+═══════════════════════════════════════════════════════ */
+const aiChatSection  = document.getElementById('ai-chat-section');
+const chatMessages   = document.getElementById('chat-messages');
+const chatQuestion   = document.getElementById('chat-question');
+const btnChatSend    = document.getElementById('btn-chat-send');
+
+const CHAT_SYSTEM = `Sei un coach di comunicazione esperto per la segreteria del Dr. Petrenga (medico estetica high ticket: FaceLine, filler, botox, rinofiller).
+Una segretaria (Carmen o Miriana) ha appena ricevuto l'analisi di una conversazione con una paziente e ti fa domande su come migliorare.
+Rispondi in italiano, in modo diretto, pratico e conciso. Puoi fare riferimento al testo della conversazione e all'analisi fornita.
+Non ripetere l'analisi per intero: rispondi solo alla domanda specifica.`;
+
+const chatState = {
+  history: [],          // [{role, content}]
+  contextText: '',
+  contextResult: null,
+};
+
+function initChat(conversationText, analysisResult) {
+  chatState.history = [];
+  chatState.contextText = conversationText;
+  chatState.contextResult = analysisResult;
+  chatMessages.innerHTML = '';
+  chatQuestion.value = '';
+  aiChatSection.style.display = 'block';
+}
+
+function appendBubble(role, text, isLoading = false) {
+  const wrap = document.createElement('div');
+  wrap.className = `chat-bubble ${role}${isLoading ? ' loading' : ''}`;
+
+  const label = document.createElement('div');
+  label.className = 'chat-bubble-label';
+  label.textContent = role === 'user'
+    ? (state.selectedPerson === 'miriana' ? 'Miriana' : 'Carmen')
+    : 'Coach AI';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'chat-bubble-text';
+  bubble.textContent = isLoading ? 'Sto scrivendo…' : text;
+
+  wrap.appendChild(label);
+  wrap.appendChild(bubble);
+  chatMessages.appendChild(wrap);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  return bubble;
+}
+
+async function sendChatMessage() {
+  const question = chatQuestion.value.trim();
+  if (!question) return;
+
+  chatQuestion.value = '';
+  btnChatSend.disabled = true;
+  appendBubble('user', question);
+
+  // Prima domanda: includiamo il contesto completo
+  let userContent = question;
+  if (chatState.history.length === 0) {
+    const sintesi = chatState.contextResult ? `\n\nANALISI RICEVUTA:\n${JSON.stringify(chatState.contextResult, null, 2)}` : '';
+    const conv = chatState.contextText ? `\nCONVERSAZIONE:\n${chatState.contextText.slice(0, 4000)}` : '';
+    userContent = `${conv}${sintesi}\n\n---\nDomanda: ${question}`;
+  }
+
+  chatState.history.push({ role: 'user', content: userContent });
+
+  const loadingBubble = appendBubble('ai', '', true);
+
+  try {
+    const res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1024,
+        system: CHAT_SYSTEM,
+        messages: chatState.history,
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || data.error || `Errore ${res.status}`);
+
+    const reply = data.content?.[0]?.text || '';
+    loadingBubble.closest('.chat-bubble').classList.remove('loading');
+    loadingBubble.textContent = reply;
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    chatState.history.push({ role: 'assistant', content: reply });
+  } catch (err) {
+    loadingBubble.closest('.chat-bubble').classList.remove('loading');
+    loadingBubble.textContent = 'Errore: ' + err.message;
+  } finally {
+    btnChatSend.disabled = false;
+    chatQuestion.focus();
+  }
+}
+
+btnChatSend.addEventListener('click', sendChatMessage);
+chatQuestion.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendChatMessage();
+  }
+});
 
 /* ═══════════════════════════════════════════════════════
    ANALISI
@@ -1546,6 +1662,7 @@ btnAnalyze.addEventListener('click', async () => {
 
     renderResults(result);
     saveToHistory(result);
+    initChat(testo, result);
 
     /* Scroll ai risultati */
     resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
