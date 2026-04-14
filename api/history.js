@@ -1,5 +1,5 @@
-const SUPABASE_URL     = process.env.SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const SUPABASE_URL      = process.env.SUPABASE_URL      || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 function sbHeaders(extra = {}) {
   return {
@@ -40,8 +40,18 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    console.error('history: SUPABASE_URL o SUPABASE_ANON_KEY mancanti');
-    return res.status(503).json({ error: 'Supabase non configurato' });
+    // Diagnostica: mostra quali env var sono presenti (senza valori)
+    const env = {
+      SUPABASE_URL:                   !!process.env.SUPABASE_URL,
+      SUPABASE_ANON_KEY:              !!process.env.SUPABASE_ANON_KEY,
+      NEXT_PUBLIC_SUPABASE_URL:       !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      NEXT_PUBLIC_SUPABASE_ANON_KEY:  !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      POSTGRES_URL:                   !!process.env.POSTGRES_URL,
+      POSTGRES_URL_NON_POOLING:       !!process.env.POSTGRES_URL_NON_POOLING,
+      SUPABASE_JWT_SECRET:            !!process.env.SUPABASE_JWT_SECRET,
+    };
+    console.error('history: env vars mancanti', JSON.stringify(env));
+    return res.status(503).json({ error: 'Supabase non configurato', env });
   }
 
   try {
