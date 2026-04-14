@@ -1,26 +1,23 @@
-import pkg from 'pg';
-const { Pool } = pkg;
+const SUPABASE_URL     = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
-// Usa POSTGRES_URL_NON_POOLING (dal connettore Supabase su Vercel)
-// oppure POSTGRES_URL come fallback
-const pool = new Pool({
-  connectionString: process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL,
-  ssl: { rejectUnauthorized: false },
-  max: 1,
-});
+function sbHeaders(extra = {}) {
+  return {
+    'apikey':        SUPABASE_ANON_KEY,
+    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    'Content-Type':  'application/json',
+    ...extra,
+  };
+}
 
-const INIT = `
-  CREATE TABLE IF NOT EXISTS revisioni (
-    id         BIGINT PRIMARY KEY,
-    person     TEXT,
-    date       TEXT,
-    patient_name TEXT,
-    avg_score  INTEGER,
-    sintesi    TEXT,
-    tipo       TEXT,
-    result     JSONB
+async function getAll() {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/revisioni?select=*&order=id.desc&limit=200`,
+    { headers: sbHeaders() }
   );
-`;
+  if (!res.ok) throw new Error(`Supabase GET ${res.status}: ${await res.text()}`);
+  return res.json();
+}
 
 function toEntry(r) {
   return {
@@ -37,21 +34,20 @@ function toEntry(r) {
 }
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin',  '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const db = await pool.connect();
-  try {
-    // Crea la tabella se non esiste (prima chiamata)
-    await db.query(INIT);
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    console.error('history: SUPABASE_URL o SUPABASE_ANON_KEY mancanti');
+    return res.status(503).json({ error: 'Supabase non configurato' });
+  }
 
+  try {
     /* GET — carica storico */
     if (req.method === 'GET') {
-      const { rows } = await db.query(
-        'SELECT * FROM revisioni ORDER BY id DESC LIMIT 200'
-      );
+      const rows = await getAll();
       return res.status(200).json({ history: rows.map(toEntry) });
     }
 
@@ -60,27 +56,50 @@ export default async function handler(req, res) {
       const { action, entry, id } = req.body;
 
       if (action === 'add' && entry) {
-        // Mantieni max 200 voci: elimina le più vecchie
-        await db.query(`
-          DELETE FROM revisioni
-          WHERE id IN (
-            SELECT id FROM revisioni ORDER BY id DESC OFFSET 199
-          )
-        `);
-        await db.query(
-          `INSERT INTO revisioni (id, person, date, patient_name, avg_score, sintesi, tipo, result)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-           ON CONFLICT (id) DO NOTHING`,
-          [entry.id, entry.person, entry.date, entry.patientName,
-           entry.avgScore, entry.sintesi, entry.tipo, JSON.stringify(entry.result)]
+        // Inserisci (ignora duplicati)
+        const ins = await fetch(`${SUPABASE_URL}/rest/v1/revisioni`, {
+          method:  'POST',
+          headers: sbHeaders({ 'Prefer': 'resolution=ignore-duplicates,return=minimal' }),
+          body:    JSON.stringify({
+            id:           entry.id,
+            person:       entry.person,
+            date:         entry.date,
+            patient_name: entry.patientName,
+            avg_score:    entry.avgScore,
+            sintesi:      entry.sintesi,
+            tipo:         entry.tipo,
+            result:       entry.result,
+          }),
+        });
+        if (!ins.ok) throw new Error(`Insert ${ins.status}: ${await ins.text()}`);
+
+        // Mantieni max 200: elimina i più vecchi
+        const allRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/revisioni?select=id&order=id.desc&limit=1000`,
+          { headers: sbHeaders() }
         );
-        const { rows } = await db.query('SELECT * FROM revisioni ORDER BY id DESC LIMIT 200');
+        if (allRes.ok) {
+          const all = await allRes.json();
+          if (all.length > 200) {
+            const toDelete = all.slice(200).map(r => r.id);
+            await fetch(
+              `${SUPABASE_URL}/rest/v1/revisioni?id=in.(${toDelete.join(',')})`,
+              { method: 'DELETE', headers: sbHeaders() }
+            );
+          }
+        }
+
+        const rows = await getAll();
         return res.status(200).json({ ok: true, history: rows.map(toEntry) });
       }
 
       if (action === 'delete' && id !== undefined) {
-        await db.query('DELETE FROM revisioni WHERE id = $1', [id]);
-        const { rows } = await db.query('SELECT * FROM revisioni ORDER BY id DESC LIMIT 200');
+        const del = await fetch(
+          `${SUPABASE_URL}/rest/v1/revisioni?id=eq.${id}`,
+          { method: 'DELETE', headers: sbHeaders() }
+        );
+        if (!del.ok) throw new Error(`Delete ${del.status}: ${await del.text()}`);
+        const rows = await getAll();
         return res.status(200).json({ ok: true, history: rows.map(toEntry) });
       }
 
@@ -91,7 +110,5 @@ export default async function handler(req, res) {
   } catch (err) {
     console.error('history error:', err.message);
     return res.status(500).json({ error: err.message });
-  } finally {
-    db.release();
   }
 }
