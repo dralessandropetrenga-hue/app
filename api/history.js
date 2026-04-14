@@ -1,5 +1,5 @@
-const SUPABASE_URL      = process.env.SUPABASE_URL      || process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const SUPABASE_URL     = 'https://xwijckmrywsvtddmhsij.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh3aWpja21yeXdzdnRkZG1oc2lqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxNTU0MDQsImV4cCI6MjA5MTczMTQwNH0.ofJl1zEQPudxKvfFvt3EnqEaP2gxVq2iPQLGaFV3v6A';
 
 function sbHeaders(extra = {}) {
   return {
@@ -39,21 +39,6 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    // Diagnostica: mostra quali env var sono presenti (senza valori)
-    const env = {
-      SUPABASE_URL:                   !!process.env.SUPABASE_URL,
-      SUPABASE_ANON_KEY:              !!process.env.SUPABASE_ANON_KEY,
-      NEXT_PUBLIC_SUPABASE_URL:       !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-      NEXT_PUBLIC_SUPABASE_ANON_KEY:  !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      POSTGRES_URL:                   !!process.env.POSTGRES_URL,
-      POSTGRES_URL_NON_POOLING:       !!process.env.POSTGRES_URL_NON_POOLING,
-      SUPABASE_JWT_SECRET:            !!process.env.SUPABASE_JWT_SECRET,
-    };
-    console.error('history: env vars mancanti', JSON.stringify(env));
-    return res.status(503).json({ error: 'Supabase non configurato', env });
-  }
-
   try {
     /* GET — carica storico */
     if (req.method === 'GET') {
@@ -66,7 +51,6 @@ export default async function handler(req, res) {
       const { action, entry, id } = req.body;
 
       if (action === 'add' && entry) {
-        // Inserisci (ignora duplicati)
         const ins = await fetch(`${SUPABASE_URL}/rest/v1/revisioni`, {
           method:  'POST',
           headers: sbHeaders({ 'Prefer': 'resolution=ignore-duplicates,return=minimal' }),
