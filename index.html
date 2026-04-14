@@ -914,18 +914,30 @@ btnMiriana.addEventListener('click', () => selectPerson('miriana'));
 btnCarmen.addEventListener('click', () => selectPerson('carmen'));
 
 /* ═══════════════════════════════════════════════════════
-   STORICO REVISIONI
+   STORICO REVISIONI — condiviso via API (Upstash Redis)
+   con fallback automatico su localStorage se offline
 ═══════════════════════════════════════════════════════ */
-function getHistory() {
-  try { return JSON.parse(localStorage.getItem('revisioni_history') || '[]'); }
-  catch { return []; }
+async function apiHistory(method, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch('/api/history', opts);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
 }
 
-function saveHistory(arr) {
-  localStorage.setItem('revisioni_history', JSON.stringify(arr));
+// Legge lo storico (API → fallback localStorage)
+async function loadHistory() {
+  try {
+    const data = await apiHistory('GET');
+    return data.history || [];
+  } catch {
+    try { return JSON.parse(localStorage.getItem('revisioni_history') || '[]'); }
+    catch { return []; }
+  }
 }
 
-function saveToHistory(result) {
+// Aggiunge voce (API → fallback localStorage)
+async function saveToHistory(result) {
   const v = result.voti || {};
   const avgScore = Math.round(
     ((v.posizionamento_high_ticket || 0) + (v.struttura_vendita || 0) + (v.chiarezza_efficienza || 0)) / 3
@@ -941,21 +953,40 @@ function saveToHistory(result) {
     segretaria: result.segretaria || '',
     result,
   };
-  const history = getHistory();
-  history.unshift(entry);
-  if (history.length > 200) history.splice(200);
-  saveHistory(history);
-  renderHistory();
+  try {
+    const data = await apiHistory('POST', { action: 'add', entry });
+    renderHistoryData(data.history || []);
+  } catch {
+    // fallback localStorage
+    const history = (() => { try { return JSON.parse(localStorage.getItem('revisioni_history') || '[]'); } catch { return []; } })();
+    history.unshift(entry);
+    if (history.length > 200) history.splice(200);
+    localStorage.setItem('revisioni_history', JSON.stringify(history));
+    renderHistoryData(history);
+  }
 }
 
-function deleteFromHistory(id) {
-  const history = getHistory().filter(e => e.id !== id);
-  saveHistory(history);
-  renderHistory();
+// Elimina voce (API → fallback localStorage)
+async function deleteFromHistory(id) {
+  try {
+    const data = await apiHistory('POST', { action: 'delete', id });
+    renderHistoryData(data.history || []);
+  } catch {
+    const history = (() => { try { return JSON.parse(localStorage.getItem('revisioni_history') || '[]'); } catch { return []; } })().filter(e => e.id !== id);
+    localStorage.setItem('revisioni_history', JSON.stringify(history));
+    renderHistoryData(history);
+  }
 }
 
-function renderHistory() {
-  const history = getHistory();
+// Carica e renderizza (chiamata iniziale e dopo selectPerson)
+async function renderHistory() {
+  historyCount.textContent = '';
+  const history = await loadHistory();
+  renderHistoryData(history);
+}
+
+// Renderizza a partire dall'array già in memoria
+function renderHistoryData(history) {
   const filtered = state.selectedPerson
     ? history.filter(e => e.person === state.selectedPerson)
     : history;
@@ -990,9 +1021,10 @@ function renderHistory() {
   historyList.querySelectorAll('.history-item').forEach(el => {
     el.addEventListener('click', () => {
       const id = parseInt(el.dataset.id);
-      const found = getHistory().find(e => e.id === id);
+      const found = filtered.find(e => e.id === id);
       if (!found) return;
       renderResults(found.result);
+      initChat('', found.result);
       resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   });
