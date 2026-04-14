@@ -4,52 +4,77 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const REDIS_URL   = process.env.UPSTASH_REDIS_REST_URL;
-  const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!REDIS_URL || !REDIS_TOKEN) {
-    return res.status(503).json({ error: 'Storage non configurato (mancano UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN)' });
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
+    return res.status(503).json({ error: 'Supabase non configurato (mancano SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY)' });
   }
 
-  const KEY = 'revisioni_history';
+  const BUCKET = 'app-storage';
+  const FILE   = 'revisioni.json';
+  const authHeader = { Authorization: `Bearer ${SUPABASE_KEY}` };
 
-  async function redis(...args) {
-    const r = await fetch(REDIS_URL, {
+  /* ── Crea il bucket se non esiste ─────────────────────── */
+  async function ensureBucket() {
+    await fetch(`${SUPABASE_URL}/storage/v1/bucket`, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${REDIS_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(args),
+      headers: { ...authHeader, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: BUCKET, name: BUCKET, public: false }),
     });
-    if (!r.ok) throw new Error(`Redis HTTP ${r.status}`);
-    const data = await r.json();
-    return data.result;
+    // ignoriamo errore "already exists"
+  }
+
+  /* ── Leggi JSON dal file ──────────────────────────────── */
+  async function readHistory() {
+    const r = await fetch(
+      `${SUPABASE_URL}/storage/v1/object/${BUCKET}/${FILE}`,
+      { headers: authHeader }
+    );
+    if (!r.ok) return [];
+    return r.json();
+  }
+
+  /* ── Scrivi JSON nel file (upsert) ───────────────────── */
+  async function writeHistory(data) {
+    await fetch(
+      `${SUPABASE_URL}/storage/v1/object/${BUCKET}/${FILE}`,
+      {
+        method: 'POST',
+        headers: {
+          ...authHeader,
+          'Content-Type': 'application/json',
+          'x-upsert': 'true',
+        },
+        body: JSON.stringify(data),
+      }
+    );
   }
 
   try {
+    await ensureBucket();
+
+    /* GET — carica storico */
     if (req.method === 'GET') {
-      const raw = await redis('GET', KEY);
-      const history = raw ? JSON.parse(raw) : [];
+      const history = await readHistory();
       return res.status(200).json({ history });
     }
 
+    /* POST — aggiungi o elimina voce */
     if (req.method === 'POST') {
       const { action, entry, id } = req.body;
-
-      const raw = await redis('GET', KEY);
-      let history = raw ? JSON.parse(raw) : [];
+      let history = await readHistory();
 
       if (action === 'add' && entry) {
         history.unshift(entry);
         if (history.length > 200) history.splice(200);
-        await redis('SET', KEY, JSON.stringify(history));
+        await writeHistory(history);
         return res.status(200).json({ ok: true, history });
       }
 
       if (action === 'delete' && id !== undefined) {
         history = history.filter(e => e.id !== id);
-        await redis('SET', KEY, JSON.stringify(history));
+        await writeHistory(history);
         return res.status(200).json({ ok: true, history });
       }
 
