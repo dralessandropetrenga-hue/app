@@ -71,12 +71,13 @@ export default async function handler(req, res) {
   const ghlApiKey    = process.env.GOHIGHLEVEL_API_KEY;
   const locationId   = process.env.GOHIGHLEVEL_LOCATION_ID;
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
-  const supabaseUrl  = process.env.SUPABASE_URL;
-  const supabaseKey  = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // Supabase: stesse credenziali pubbliche già usate in api/history.js
+  const supabaseUrl  = 'https://xwijckmrywsvtddmhsij.supabase.co';
+  const supabaseKey  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh3aWpja21yeXdzdnRkZG1oc2lqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxNTU0MDQsImV4cCI6MjA5MTczMTQwNH0.ofJl1zEQPudxKvfFvt3EnqEaP2gxVq2iPQLGaFV3v6A';
 
-  if (!ghlApiKey || !locationId || !anthropicKey || !supabaseUrl || !supabaseKey) {
+  if (!ghlApiKey || !locationId || !anthropicKey) {
     res.writeHead(500, { ...CORS_HEADERS, "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Variabili d'ambiente mancanti" }));
+    res.end(JSON.stringify({ error: "GOHIGHLEVEL_API_KEY, GOHIGHLEVEL_LOCATION_ID o ANTHROPIC_API_KEY mancanti" }));
     return;
   }
 
