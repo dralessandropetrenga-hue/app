@@ -108,12 +108,17 @@ async function runAgent({ ghlApiKey, locationId, anthropicKey, supabaseUrl, supa
     Prefer: "resolution=merge-duplicates",
   };
 
-  // 1. Recupera tutte le conversazioni attive da GHL (max 100)
-  const convUrl = `${GHL_BASE}/conversations/search?locationId=${encodeURIComponent(locationId)}&limit=100`;
+  // 1. Recupera le conversazioni attive da GHL (max 5 per batch, ordinate per ultima attività)
+  const BATCH_SIZE = 5;
+  const convUrl = `${GHL_BASE}/conversations/search?locationId=${encodeURIComponent(locationId)}&limit=100&sort=last_message_date&sortDirection=desc`;
   const convRes = await fetch(convUrl, { headers: ghlHeaders });
   if (!convRes.ok) throw new Error(`GHL conversations: ${convRes.status}`);
   const convData = await convRes.json();
-  const conversations = convData.conversations || [];
+  const allConversations = convData.conversations || [];
+
+  // Prendi solo le prime BATCH_SIZE con messaggi nuovi
+  // (le più recenti per attività, così copriamo quelle più calde)
+  const conversations = allConversations.slice(0, BATCH_SIZE * 4); // scansiona le prime 20, analizza max 5
 
   if (!conversations.length) {
     return buildReport([], new Date());
@@ -127,10 +132,12 @@ async function runAgent({ ghlApiKey, locationId, anthropicKey, supabaseUrl, supa
   const trackingMap  = {};
   for (const t of trackingRows) trackingMap[t.conversation_id] = t;
 
-  // 3. Analizza le conversazioni con nuovi messaggi
+  // 3. Analizza le conversazioni con nuovi messaggi (max BATCH_SIZE)
   const results = [];
+  let analyzed = 0;
 
   for (const conv of conversations) {
+    if (analyzed >= BATCH_SIZE) break;
     const convId     = conv.id;
     const contactName = conv.contactName || conv.fullName || "Paziente";
     const prev       = trackingMap[convId];
@@ -175,8 +182,10 @@ async function runAgent({ ghlApiKey, locationId, anthropicKey, supabaseUrl, supa
       analysis,
     });
 
-    // Aggiorna tracking su Supabase
-    await fetch(`${supabaseUrl}/rest/v1/conversation_tracking`, {
+    analyzed++;
+
+    // Aggiorna tracking su Supabase (fire-and-forget per non perdere tempo)
+    fetch(`${supabaseUrl}/rest/v1/conversation_tracking`, {
       method: "POST",
       headers: sbHeaders,
       body: JSON.stringify({
@@ -189,9 +198,6 @@ async function runAgent({ ghlApiKey, locationId, anthropicKey, supabaseUrl, supa
         updated_at: new Date().toISOString(),
       }),
     });
-
-    // Pausa per non saturare le API
-    await sleep(600);
   }
 
   // 4. Costruisce e salva il report
