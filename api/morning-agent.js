@@ -110,7 +110,7 @@ async function runAgent({ ghlApiKey, locationId, anthropicKey, supabaseUrl, supa
 
   // 1. Recupera le conversazioni attive da GHL (max 5 per batch, ordinate per ultima attività)
   const BATCH_SIZE = 5;
-  const convUrl = `${GHL_BASE}/conversations/search?locationId=${encodeURIComponent(locationId)}&limit=100&sort=last_message_date&sortDirection=desc`;
+  const convUrl = `${GHL_BASE}/conversations/search?locationId=${encodeURIComponent(locationId)}&limit=100&sortBy=last_message_date&sort=desc`;
   const convRes = await fetch(convUrl, { headers: ghlHeaders });
   if (!convRes.ok) throw new Error(`GHL conversations: ${convRes.status}`);
   const convData = await convRes.json();
