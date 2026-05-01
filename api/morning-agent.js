@@ -163,8 +163,16 @@ async function runAgent({ ghlApiKey, locationId, anthropicKey, supabaseUrl, supa
     // Salta se l'ultimo messaggio è già stato analizzato
     if (prev?.last_analyzed_message_id === lastMsg.id) continue;
 
-    // Testo completo conversazione per contesto, solo nuovi messaggi per il delta
+    // Salta chat interne (email staff, nomi noti dello studio)
+    const isInternal = contactName.includes("@") ||
+      /petrenga|miriana|carmen|asia|staff|studio/i.test(contactName);
+    if (isInternal) continue;
+
+    // Testo completo conversazione
     const fullText = formatConversation(messages, contactName);
+
+    // Salta se la conversazione è vuota o troppo corta per essere analizzata
+    if (fullText.trim().length < 80) continue;
 
     // Determina segretaria dal canale
     const channel     = (conv.type || conv.channel || "").toLowerCase();
@@ -246,7 +254,7 @@ async function analyzeWithClaude(apiKey, conversationText, segretaria, contactNa
     },
     body: JSON.stringify({
       model: "claude-sonnet-4-6",
-      max_tokens: 512,
+      max_tokens: 1024,
       system: SYSTEM_PROMPT,
       messages: [{
         role: "user",
@@ -277,14 +285,16 @@ function buildReport(results, now) {
 
   const formatRow = (r) => {
     const v   = r.analysis.voti || {};
-    const avg = Math.round(
-      ((v.posizionamento_high_ticket || 0) + (v.struttura_vendita || 0) + (v.chiarezza_efficienza || 0)) / 3
-    );
-    const dot    = avg >= 8 ? "🟢" : avg >= 6 ? "🟡" : "🔴";
+    const hasScores = v.posizionamento_high_ticket || v.struttura_vendita || v.chiarezza_efficienza;
+    const avg = hasScores
+      ? Math.round(((v.posizionamento_high_ticket || 0) + (v.struttura_vendita || 0) + (v.chiarezza_efficienza || 0)) / 3)
+      : null;
+    const dot     = avg === null ? "⚪" : avg >= 8 ? "🟢" : avg >= 6 ? "🟡" : "🔴";
+    const score   = avg === null ? "N/A" : `${avg}/10`;
     const sintesi = r.analysis.sintesi ? `\n   ${r.analysis.sintesi}` : "";
     const errore  = r.analysis.errori_critici?.[0] ? `\n   ⚠️ ${r.analysis.errori_critici[0]}` : "";
     const azione  = r.analysis.prossima_azione ? `\n   👉 ${r.analysis.prossima_azione}` : "";
-    return `${dot} ${r.contactName} — ${avg}/10${sintesi}${errore}${azione}`;
+    return `${dot} ${r.contactName} — ${score}${sintesi}${errore}${azione}`;
   };
 
   let report = `📊 REPORT ANALISI CONVERSAZIONI\n${dateStr} · ore 8:00\nChat analizzate: ${results.length}\n`;
