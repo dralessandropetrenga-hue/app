@@ -566,7 +566,7 @@
     /* ── Selettore persona ────────────────────────────── */
     .person-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1fr;
       gap: 14px;
       margin-top: 4px;
     }
@@ -601,6 +601,10 @@
     .person-btn.carmen { color: #1565c0; border-color: #bbdefb; }
     .person-btn.carmen:hover { border-color: #1565c0; }
     .person-btn.carmen.active { background: #1565c0; color: #fff; border-color: #1565c0; box-shadow: 0 4px 14px rgba(21,101,192,0.35); }
+
+    .person-btn.asia { color: #7b1fa2; border-color: #e1bee7; }
+    .person-btn.asia:hover { border-color: #7b1fa2; }
+    .person-btn.asia.active { background: #7b1fa2; color: #fff; border-color: #7b1fa2; box-shadow: 0 4px 14px rgba(123,31,162,0.35); }
 
     .person-hint {
       font-size: 12px;
@@ -715,7 +719,10 @@
     .history-del:hover { color: #dc2626; background: #fef2f2; }
 
     @media (max-width: 600px) {
-      .person-grid { grid-template-columns: 1fr 1fr; }
+      .person-grid { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+      .person-btn { padding: 14px 6px; font-size: 13px; }
+      .person-btn .person-icon { font-size: 22px; }
+      .person-btn .person-sub { font-size: 10px; }
     }
   </style>
 </head>
@@ -744,6 +751,11 @@
         <span class="person-icon">👩</span>
         <span>Carmen</span>
         <span class="person-sub">WhatsApp &amp; Telefonate</span>
+      </button>
+      <button class="person-btn asia" id="btn-asia">
+        <span class="person-icon">👩</span>
+        <span>Asia</span>
+        <span class="person-sub">Segreteria &amp; Pazienti</span>
       </button>
     </div>
     <div class="person-hint" id="person-hint">Seleziona il tuo nome per vedere solo le tue revisioni</div>
@@ -822,11 +834,12 @@ const state = {
    SYSTEM PROMPT BASE
 ═══════════════════════════════════════════════════════ */
 const BASE_SYSTEM_PROMPT = `Sei un coach di comunicazione per la segreteria del Dr. Petrenga, medico di medicina estetica high ticket (FaceLine, filler, botox, rinofiller).
-Il tuo compito è analizzare e migliorare chat WhatsApp, DM Instagram e trascrizioni telefonate gestite da Carmen e Miriana.
+Il tuo compito è analizzare e migliorare chat WhatsApp, DM Instagram e trascrizioni telefonate gestite da Carmen, Miriana e Asia.
 
 Le segretarie sono:
 - Miriana: gestisce social media e chat Instagram
 - Carmen: gestisce chat WhatsApp, telefonate, accoglienza, prenotazioni
+- Asia: segreteria, accoglienza pazienti, gestione chat e prenotazioni
 
 OBIETTIVO: ottimizza in questo ordine:
 1. Portare la paziente a prenotare con caparra da 50€.
@@ -849,7 +862,7 @@ COSE DA NON FARE (segnala se compaiono):
 Analizza e restituisci SOLO un JSON puro senza backtick con questa struttura:
 {
   "tipo": "chat" o "telefonata",
-  "segretaria": "Miriana" o "Carmen" o "Non identificata",
+  "segretaria": "Miriana" o "Carmen" o "Asia" o "Non identificata",
   "sintesi": "max 5 righe sull'andamento generale",
   "voti": {
     "posizionamento_high_ticket": numero 1-10,
@@ -886,6 +899,7 @@ const fileImg       = document.getElementById('file-img');
 const fileTxt       = document.getElementById('file-txt');
 const btnMiriana    = document.getElementById('btn-miriana');
 const btnCarmen     = document.getElementById('btn-carmen');
+const btnAsia       = document.getElementById('btn-asia');
 const personHint    = document.getElementById('person-hint');
 const historyToggle = document.getElementById('history-toggle');
 const historyPanel  = document.getElementById('history-panel');
@@ -903,15 +917,16 @@ function selectPerson(person) {
   state.selectedPerson = person;
   btnMiriana.classList.toggle('active', person === 'miriana');
   btnCarmen.classList.toggle('active', person === 'carmen');
-  personHint.textContent = person === 'miriana'
-    ? 'Ciao Miriana! Vedi solo le tue revisioni.'
-    : 'Ciao Carmen! Vedi solo le tue revisioni.';
+  btnAsia.classList.toggle('active', person === 'asia');
+  const names = { miriana: 'Miriana', carmen: 'Carmen', asia: 'Asia' };
+  personHint.textContent = `Ciao ${names[person]}! Vedi solo le tue revisioni.`;
   updateAnalyzeBtn();
   renderHistory();
 }
 
 btnMiriana.addEventListener('click', () => selectPerson('miriana'));
-btnCarmen.addEventListener('click', () => selectPerson('carmen'));
+btnCarmen.addEventListener('click',  () => selectPerson('carmen'));
+btnAsia.addEventListener('click',    () => selectPerson('asia'));
 
 /* ═══════════════════════════════════════════════════════
    STORICO REVISIONI — condiviso via API (Upstash Redis)
@@ -994,7 +1009,8 @@ function renderHistoryData(history) {
   historyCount.textContent = filtered.length ? String(filtered.length) : '';
 
   if (!filtered.length) {
-    const who = state.selectedPerson === 'miriana' ? 'Miriana' : state.selectedPerson === 'carmen' ? 'Carmen' : null;
+    const whoMap = { miriana: 'Miriana', carmen: 'Carmen', asia: 'Asia' };
+    const who = whoMap[state.selectedPerson] || null;
     historyList.innerHTML = `<div class="history-empty">${who ? `Nessuna revisione trovata per ${who}.` : 'Seleziona una segretaria per vedere le revisioni.'}<br><span style="font-size:12px">Le analisi vengono salvate automaticamente dopo ogni revisione.</span></div>`;
     return;
   }
@@ -1542,8 +1558,9 @@ function appendBubble(role, text, isLoading = false) {
 
   const label = document.createElement('div');
   label.className = 'chat-bubble-label';
+  const roleNames = { miriana: 'Miriana', carmen: 'Carmen', asia: 'Asia' };
   label.textContent = role === 'user'
-    ? (state.selectedPerson === 'miriana' ? 'Miriana' : 'Carmen')
+    ? (roleNames[state.selectedPerson] || 'Tu')
     : 'Coach AI';
 
   const bubble = document.createElement('div');
@@ -1628,9 +1645,12 @@ btnAnalyze.addEventListener('click', async () => {
   const contentBlocks = [];
 
   /* Contesto segretaria */
-  const personaTesto = state.selectedPerson === 'miriana'
-    ? 'Segretaria: Miriana (gestisce Instagram e social media)'
-    : 'Segretaria: Carmen (gestisce WhatsApp e telefonate)';
+  const personaMap = {
+    miriana: 'Segretaria: Miriana (gestisce Instagram e social media)',
+    carmen:  'Segretaria: Carmen (gestisce WhatsApp e telefonate)',
+    asia:    'Segretaria: Asia (segreteria, accoglienza pazienti e prenotazioni)',
+  };
+  const personaTesto = personaMap[state.selectedPerson] || '';
 
   contentBlocks.push({
     type: 'text',

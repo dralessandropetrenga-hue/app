@@ -3,6 +3,10 @@
     {
       "path": "/api/morning-agent",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/post-treatment-agent",
+      "schedule": "5 6 * * *"
     }
   ]
 }

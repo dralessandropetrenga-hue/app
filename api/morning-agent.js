@@ -18,11 +18,12 @@ const CORS_HEADERS = {
 };
 
 const SYSTEM_PROMPT = `Sei un coach di comunicazione per la segreteria del Dr. Petrenga, medico di medicina estetica high ticket (FaceLine, filler, botox, rinofiller).
-Il tuo compito è analizzare e migliorare chat WhatsApp, DM Instagram e trascrizioni telefonate gestite da Carmen e Miriana.
+Il tuo compito è analizzare e migliorare chat WhatsApp, DM Instagram e trascrizioni telefonate gestite da Carmen, Miriana e Asia.
 
 Le segretarie sono:
 - Miriana: gestisce social media e chat Instagram
 - Carmen: gestisce chat WhatsApp, telefonate, accoglienza, prenotazioni
+- Asia: gestisce segreteria, accoglienza pazienti e prenotazioni
 
 OBIETTIVO: ottimizza in questo ordine:
 1. Portare la paziente a prenotare con caparra da 50€.
@@ -214,6 +215,8 @@ async function runAgent({ ghlApiKey, locationId, anthropicKey, supabaseUrl, supa
     }),
   });
 
+  await sendTelegram(report);
+
   return report;
 }
 
@@ -299,6 +302,38 @@ function buildReport(results, now) {
   }
 
   return report;
+}
+
+async function sendTelegram(text) {
+  const token  = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  if (!token || !chatId) return;
+
+  // Telegram limita i messaggi a 4096 caratteri — divide se necessario
+  const chunks = splitText(text, 4000);
+  for (const chunk of chunks) {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, text: chunk }),
+    });
+  }
+}
+
+function splitText(text, maxLen) {
+  if (text.length <= maxLen) return [text];
+  const chunks = [];
+  let i = 0;
+  while (i < text.length) {
+    let end = i + maxLen;
+    if (end < text.length) {
+      const nl = text.lastIndexOf("\n", end);
+      if (nl > i) end = nl;
+    }
+    chunks.push(text.slice(i, end));
+    i = end;
+  }
+  return chunks;
 }
 
 function sleep(ms) {
